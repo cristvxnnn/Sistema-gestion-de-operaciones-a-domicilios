@@ -1,8 +1,9 @@
-"""Componentes reutilizables: tabla de datos, tarjetas de indicadores y aviso de error."""
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
+import tkinter as tk
 from tkinter import ttk
 
+from interfaces.estilos import COLORES
 
 def formatear(valor):
     if valor is None:
@@ -65,3 +66,20 @@ def mostrar_error(parent, error):
               style="TarjetaTitulo.TLabel").pack(anchor="w")
     ttk.Label(tarjeta, text=str(error), style="TarjetaTexto.TLabel",
               wraplength=700, justify="left").pack(anchor="w", pady=(4, 0))
+
+class GraficoBarras(tk.Canvas):
+    def __init__(self, parent, datos, ancho=400, alto=200):
+        super().__init__(parent, width=ancho, height=alto,
+                         background=COLORES["tarjeta"], highlightthickness=0)
+        maximo = max([valor for _, valor in datos] + [1])
+        x0, largo = 100, ancho - 150
+        paso = alto // max(len(datos), 1)
+        for i, (etiqueta, valor) in enumerate(datos):
+            y = i * paso + paso // 2
+            self.create_text(8, y, text=etiqueta, anchor="w", fill=COLORES["texto"],
+                             font=("Segoe UI", 10))
+            fin = x0 + largo * valor / maximo
+            self.create_rectangle(x0, y - 10, max(fin, x0 + 2), y + 10,
+                                  fill=COLORES["acento"], outline="")
+            self.create_text(fin + 8, y, text=str(valor), anchor="w",
+                             fill=COLORES["texto_suave"], font=("Segoe UI", 10, "bold"))
