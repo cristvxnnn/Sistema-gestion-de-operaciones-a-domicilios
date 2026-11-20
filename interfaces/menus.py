@@ -1,5 +1,6 @@
 from interfaces.panel_base import panel_pendiente
 from interfaces.cliente import (PanelResumenCliente, PanelMisSolicitudes, PanelNuevaSolicitud, PanelMisIncidentes)
+from interfaces.domiciliario import (PanelDisponibles, PanelMisSolicitudesDom, PanelRegistrarIncidente)
 TITULOS_ROL = {
     "cliente": "Cliente",
     "domiciliario": "Domiciliario",
@@ -15,12 +16,9 @@ MENUS = {
         ("mis_incidentes", "Mis incidentes", PanelMisIncidentes),
     ],
     "domiciliario": [
-        ("disponibles", "Solicitudes disponibles",
-         panel_pendiente("Solicitudes disponibles", "Solicitudes creadas que puedes tomar.")),
-        ("mis_solicitudes", "Mis solicitudes",
-         panel_pendiente("Mis solicitudes", "Solicitudes que tienes asignadas.")),
-        ("incidentes", "Registrar incidente",
-         panel_pendiente("Registrar incidente", "Reporta una novedad durante el servicio.")),
+        ("disponibles", "Solicitudes disponibles", PanelDisponibles),
+        ("mis_solicitudes", "Mis solicitudes", PanelMisSolicitudesDom),
+        ("incidentes", "Registrar incidente", PanelRegistrarIncidente),
     ],
     "admin": [
         ("dashboard", "Dashboard",
