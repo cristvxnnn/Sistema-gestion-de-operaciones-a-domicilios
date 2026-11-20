@@ -59,3 +59,11 @@ def aplicar_estilos(root):
                 foreground=c["texto"], rowheight=28, font=(FUENTE, 10))
     s.configure("Treeview.Heading", background=c["acento_claro"],
                 foreground=c["acento"], font=(FUENTE, 10, "bold"))
+    s.configure("Campo.TLabel", background=c["tarjeta"], foreground=c["texto"],
+                font=(FUENTE, 10))
+    s.configure("Secundario.TButton", background=c["tarjeta"], foreground=c["acento"],
+                font=(FUENTE, 10, "bold"), padding=(14, 6), borderwidth=1,
+                bordercolor=c["acento"])
+    s.map("Secundario.TButton", background=[("active", c["acento_claro"])])
+    s.configure("TNotebook", background=c["fondo"], borderwidth=0)
+    s.configure("TNotebook.Tab", font=(FUENTE, 10, "bold"), padding=(16, 8))

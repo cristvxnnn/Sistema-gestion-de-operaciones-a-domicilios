@@ -1,82 +1,108 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 
+from database.conexion import probar_conexion
 from interfaces.estilos import aplicar_estilos, COLORES
-from interfaces.panel_principal import PanelPrincipal
-from interfaces.modulos.usuarios import PanelUsuarios
-from interfaces.modulos.clientes import PanelClientes
-from interfaces.modulos.domiciliarios import PanelDomiciliarios
-from interfaces.modulos.solicitudes import PanelSolicitudes
-from interfaces.modulos.incidentes import PanelIncidentes
-from interfaces.modulos.consultas import PanelConsultas
+from interfaces.inicio import PantallaInicio
+from interfaces.acceso import PantallaAcceso
+from interfaces.menus import MENUS, TITULOS_ROL
 
-
-MODULOS = [
-    ("inicio", "Inicio", PanelPrincipal),
-    ("usuarios", "Usuarios", PanelUsuarios),
-    ("clientes", "Clientes", PanelClientes),
-    ("domiciliarios", "Domiciliarios", PanelDomiciliarios),
-    ("solicitudes", "Solicitudes", PanelSolicitudes),
-    ("incidentes", "Incidentes", PanelIncidentes),
-    ("consultas", "Consultas", PanelConsultas),
-]
 
 class VentanaPrincipal(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Sistema de gestión de operaciones a domicilio")
-        self.geometry("1100x660")
-        self.minsize(900, 560)
+        self.title("Sistema de gestión de domicilios")
+        self.geometry("1100x680")
+        self.minsize(960, 600)
         aplicar_estilos(self)
 
-        self._botones = {}
-        self._paneles = {}
-        self._actual = None
+        self.sesion = None          # {"rol", "identificacion", "nombre"} o None
+        self._actual = None         # widget que se está mostrando
+        self._botones = {}          # clave de módulo -> botón del menú
 
         self._crear_barra_estado()
-        self._crear_menu_lateral()
-        self._crear_area_contenido()
-        self.mostrar("inicio")
-
-    def _crear_menu_lateral(self):
-        menu=ttk.Frame(self, style="Menu.TFrame", width=230)
-        menu.pack(side="left", fill="y")
-        menu.pack_propagate(False)
-
-        ttk.Label(menu, text="Domicilios", style="Marca.TLabel").pack(anchor="w", padx=18, pady=(22, 0))
-        ttk.Label(menu, text="Gestion de operaciones", style="MarcaSub.TLabel").pack(anchor="w", padx=18, pady=(0,20))
-
-        for clave, texto, _ in MODULOS:
-            boton=ttk.Button(menu, text=texto, style="Menu.TButton", command=lambda k=clave: self.mostrar(k))
-            boton.pack(fill="x")
-            self._botones[clave]=boton
-
-        tk.Frame(self, width=1, background=COLORES["borde"]).pack(side="left", fill="y")
-
-    def _crear_area_contenido(self):
-        self.area=ttk.Frame(self, style="Menu.TFrame")
+        self.menu = ttk.Frame(self, style="Menu.TFrame", width=240)
+        self.area = ttk.Frame(self, style="Contenido.TFrame")
         self.area.pack(side="left", fill="both", expand=True)
 
+        self.mostrar_inicio()
+        self.after(150, self._verificar_conexion)
+
     def _crear_barra_estado(self):
-        barra=ttk.Frame(self, style="Contenido.TFrame")
+        barra = ttk.Frame(self, style="Menu.TFrame")
         barra.pack(side="bottom", fill="x")
-        self.lbl_conexion=ttk.Label(barra, text="Base de datos: sin conexion", style="Estado.TLabel")
+        self.lbl_conexion = ttk.Label(barra, text="Base de datos: sin conexión",
+                                      style="Estado.TLabel")
         self.lbl_conexion.pack(side="left", padx=12, pady=4)
-
-    def mostrar(self, clave):
-        if clave not in self._paneles:
-            clase = next(c for k, _, c in MODULOS if k == clave)
-            self._paneles[clave] = clase(self.area, navegar=self.mostrar)
-
-        if self._actual:
-            self._paneles[self._actual].pack_forget()
-            self._botones[self._actual].configure(style="Menu.TButton")
-
-        panel = self._paneles[clave]
-        panel.pack(fill="both", expand=True)
-        self._botones[clave].configure(style="MenuActivo.TButton")
-        self._actual = clave
-        panel.al_mostrar()
 
     def actualizar_estado_conexion(self, texto):
         self.lbl_conexion.configure(text=texto)
+
+    def _verificar_conexion(self):
+        ok, mensaje = probar_conexion()
+        if ok:
+            self.actualizar_estado_conexion(f"Base de datos: conectado — {mensaje}")
+        else:
+            self.actualizar_estado_conexion("Base de datos: sin conexión")
+            messagebox.showwarning("Sin conexión", mensaje)
+
+    def _reemplazar(self, clase, **kwargs):
+        """Destruye lo que se muestra y crea la nueva pantalla"""
+        if self._actual is not None:
+            self._actual.destroy()
+        self._actual = clase(self.area, ventana=self, **kwargs)
+        self._actual.pack(fill="both", expand=True)
+
+    def mostrar_inicio(self):
+        self.sesion = None
+        self.menu.pack_forget()
+        self._reemplazar(PantallaInicio)
+
+    def mostrar_acceso(self, rol):
+        self._reemplazar(PantallaAcceso, rol=rol)
+
+    def entrar_admin(self):
+        self.iniciar_sesion("admin", None, "Administrador")
+
+    def iniciar_sesion(self, rol, identificacion, nombre):
+        self.sesion = {"rol": rol, "identificacion": identificacion, "nombre": nombre}
+        self._construir_menu()
+        self.mostrar_modulo(MENUS[rol][0][0])
+
+    def cerrar_sesion(self):
+        self.mostrar_inicio()
+
+    def mostrar_modulo(self, clave):
+        rol = self.sesion["rol"]
+        clase = next(c for k, _, c in MENUS[rol] if k == clave)
+        self._reemplazar(clase)
+        for k, boton in self._botones.items():
+            boton.configure(style="MenuActivo.TButton" if k == clave else "Menu.TButton")
+
+    def _construir_menu(self):
+        for hijo in self.menu.winfo_children():
+            hijo.destroy()
+        self._botones = {}
+        rol = self.sesion["rol"]
+
+        tk.Frame(self.menu, width=1, background=COLORES["borde"]).pack(side="right", fill="y")
+        ttk.Label(self.menu, text="Domicilios", style="Marca.TLabel").pack(
+            anchor="w", padx=18, pady=(22, 0))
+        ttk.Label(self.menu, text=TITULOS_ROL[rol], style="MarcaSub.TLabel").pack(
+            anchor="w", padx=18)
+        if rol != "admin":
+            ttk.Label(self.menu, text=f"Hola, {self.sesion['nombre']}",
+                      style="TarjetaTitulo.TLabel").pack(anchor="w", padx=18, pady=(10, 0))
+        ttk.Frame(self.menu, style="Menu.TFrame", height=18).pack()
+
+        for clave, texto, _ in MENUS[rol]:
+            boton = ttk.Button(self.menu, text=texto, style="Menu.TButton",
+                               command=lambda k=clave: self.mostrar_modulo(k))
+            boton.pack(fill="x")
+            self._botones[clave] = boton
+
+        ttk.Button(self.menu, text="Cerrar sesión", style="Secundario.TButton",
+                   command=self.cerrar_sesion).pack(side="bottom", padx=18, pady=18, anchor="w")
+
+        self.menu.pack_propagate(False)
+        self.menu.pack(side="left", fill="y", before=self.area)
