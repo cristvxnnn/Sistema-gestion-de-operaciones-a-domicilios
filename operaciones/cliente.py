@@ -65,7 +65,12 @@ def listar_tipos_recogida():
 
 def listar_establecimientos():
     return ejecutar_consulta(
-        "SELECT codigoEstablecimiento, nombre FROM establecimiento ORDER BY nombre")
+        "SELECT e.codigoEstablecimiento, e.nombre, "
+        "t.nombreTipoEstablecimiento AS tipo "
+        "FROM establecimiento e "
+        "JOIN tipoEstablecimiento t "
+        "ON e.idTipoEstablecimiento = t.idTipoEstablecimiento "
+        "ORDER BY e.nombre")
 
 
 def siguiente_numero_solicitud():

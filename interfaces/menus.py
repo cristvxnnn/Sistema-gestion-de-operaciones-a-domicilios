@@ -1,6 +1,7 @@
 """Menú lateral de cada rol."""
 from interfaces.cliente import (
-    PanelResumenCliente, PanelMisSolicitudes, PanelNuevaSolicitud, PanelMisIncidentes)
+    PanelResumenCliente, PanelMisSolicitudes, PanelMisIncidentes)
+from interfaces.cliente_marketplace import PanelNuevaSolicitudMarketplace
 from interfaces.domiciliario import (
     PanelDisponibles, PanelMisSolicitudesDom, PanelRegistrarIncidente)
 from interfaces.admin import (
@@ -15,7 +16,7 @@ TITULOS_ROL = {
 # rol -> lista de (clave, texto del menú, clase del panel)
 MENUS = {
     "cliente": [
-        ("nueva_solicitud", "Crear solicitud", PanelNuevaSolicitud),
+        ("nueva_solicitud", "Crear solicitud", PanelNuevaSolicitudMarketplace),
         ("mis_solicitudes", "Mis solicitudes", PanelMisSolicitudes),
         ("resumen", "Mi resumen", PanelResumenCliente),
         ("mis_incidentes", "Mis incidentes", PanelMisIncidentes),
