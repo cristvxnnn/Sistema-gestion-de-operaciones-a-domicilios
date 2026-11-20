@@ -3,7 +3,8 @@ from tkinter import ttk, messagebox
 
 from database.conexion import ErrorBD
 from interfaces.panel_base import PanelBase
-from interfaces.componentes import TablaDatos, mostrar_error
+from interfaces.componentes import TablaDatos, mostrar_error, limitar_campo
+from interfaces.validaciones import MAX_TEXTO_SQL
 from operaciones import domiciliario as op
 
 
@@ -108,6 +109,7 @@ class PanelRegistrarIncidente(PanelBase):
     def construir(self):
         try:
             solicitudes = op.listar_activas(self.ventana.sesion["identificacion"])
+            op.asegurar_tipo_incidente_otro()
             tipos = op.listar_tipos_incidente()
         except ErrorBD as e:
             mostrar_error(self.contenido, e)
@@ -136,14 +138,24 @@ class PanelRegistrarIncidente(PanelBase):
         ttk.Label(marco, text="Tipo de incidente", style="Campo.TLabel").grid(row=2, column=0, sticky="w", pady=(6, 0))
         self.cmb_tipo = ttk.Combobox(marco, values=list(self.tipos), state="readonly", width=52)
         self.cmb_tipo.grid(row=3, column=0, sticky="w", pady=(2, 6))
+        self.cmb_tipo.bind("<<ComboboxSelected>>", self._cambiar_tipo)
 
-        ttk.Label(marco, text="Descripción (máx. 50 caracteres)", style="Campo.TLabel").grid(
+        self.lbl_desc = ttk.Label(marco, text="Descripción (máx. 50 caracteres)",
+                                  style="Campo.TLabel")
+        self.lbl_desc.grid(
             row=4, column=0, sticky="w", pady=(6, 0))
         self.ent_desc = ttk.Entry(marco, width=55)
         self.ent_desc.grid(row=5, column=0, sticky="w", pady=(2, 6))
+        limitar_campo(self.ent_desc, MAX_TEXTO_SQL)
 
         ttk.Button(marco, text="Registrar incidente", style="Accion.TButton",
                    command=self._registrar).grid(row=6, column=0, sticky="w", pady=(18, 0))
+
+    def _cambiar_tipo(self, _evento=None):
+        if self.cmb_tipo.get().casefold() == "otro":
+            self.lbl_desc.configure(text="¿Cuál fue el incidente? (máx. 50 caracteres)")
+        else:
+            self.lbl_desc.configure(text="Descripción (máx. 50 caracteres)")
 
     def _registrar(self):
         desc = self.ent_desc.get().strip()

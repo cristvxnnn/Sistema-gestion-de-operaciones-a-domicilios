@@ -5,7 +5,8 @@ from tkinter import ttk, messagebox
 from database.conexion import ErrorBD
 from interfaces.panel_base import PanelBase
 from interfaces.componentes import (
-    TablaDatos, GraficoBarras, tarjeta_indicador, mostrar_error)
+    TablaDatos, GraficoBarras, tarjeta_indicador, mostrar_error, limitar_campo)
+from interfaces.validaciones import MAX_TEXTO_SQL
 from operaciones import admin as op
 
 
@@ -111,6 +112,77 @@ class PanelSolicitudesAdmin(PanelBase):
             return
         self.tabla.cargar(filas)
         self.lbl_total.configure(text=f"{len(filas)} solicitud(es)")
+
+
+class PanelBarriosAdmin(PanelBase):
+    TITULO = "Barrios"
+    DESCRIPCION = "Agrega barrios con cobertura para que aparezcan en las solicitudes."
+
+    COLUMNAS = [
+        ("idBarrio", "ID", 60),
+        ("nombreBarrio", "Barrio", 260),
+        ("nombreComuna", "Comuna", 220),
+    ]
+
+    def construir(self):
+        try:
+            comunas = op.listar_comunas()
+        except ErrorBD as e:
+            mostrar_error(self.contenido, e)
+            return
+
+        self.comunas = {
+            f"{fila['nombreComuna']} (ID {fila['idComuna']})": fila["idComuna"]
+            for fila in comunas
+        }
+
+        tarjeta = ttk.Frame(self.contenido, style="Tarjeta.TFrame", padding=18)
+        tarjeta.pack(fill="x", pady=(0, 12))
+        ttk.Label(tarjeta, text="Nuevo barrio", style="TarjetaTitulo.TLabel").grid(
+            row=0, column=0, columnspan=2, sticky="w")
+        ttk.Label(tarjeta, text="Nombre del barrio", style="Campo.TLabel").grid(
+            row=1, column=0, sticky="w", padx=(0, 18), pady=(10, 0))
+        ttk.Label(tarjeta, text="Comuna", style="Campo.TLabel").grid(
+            row=1, column=1, sticky="w", pady=(10, 0))
+
+        self.ent_nombre = ttk.Entry(tarjeta, width=32)
+        self.ent_nombre.grid(row=2, column=0, sticky="w", padx=(0, 18), pady=(3, 0))
+        limitar_campo(self.ent_nombre, MAX_TEXTO_SQL)
+
+        self.cmb_comuna = ttk.Combobox(
+            tarjeta, values=list(self.comunas), state="readonly", width=32)
+        self.cmb_comuna.grid(row=2, column=1, sticky="w", pady=(3, 0))
+        ttk.Button(tarjeta, text="Agregar barrio", style="Accion.TButton",
+                   command=self._agregar).grid(row=2, column=2, padx=(18, 0), pady=(3, 0))
+
+        self.tabla = TablaDatos(self.contenido, self.COLUMNAS)
+        self.tabla.pack(fill="both", expand=True)
+        self._recargar()
+
+    def _recargar(self):
+        try:
+            self.tabla.cargar(op.listar_barrios())
+        except ErrorBD as e:
+            messagebox.showerror("Error de base de datos", str(e))
+
+    def _agregar(self):
+        nombre = self.ent_nombre.get().strip()
+        if not nombre:
+            messagebox.showwarning("Revisa el formulario", "Escribe el nombre del barrio.")
+            return
+        if not self.cmb_comuna.get():
+            messagebox.showwarning("Revisa el formulario", "Selecciona una comuna.")
+            return
+        try:
+            op.crear_barrio(nombre, self.comunas[self.cmb_comuna.get()])
+        except (ErrorBD, ValueError) as e:
+            messagebox.showerror("No se pudo agregar el barrio", str(e))
+            return
+
+        self.ent_nombre.delete(0, "end")
+        self.cmb_comuna.set("")
+        self._recargar()
+        messagebox.showinfo("Barrio agregado", f"«{nombre}» ya tiene cobertura.")
 
 
 class PanelConsultas(PanelBase):

@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from interfaces.estilos import COLORES
+from interfaces.validaciones import limitar_entry
 
 def formatear(valor):
     if valor is None:
@@ -66,6 +67,12 @@ def mostrar_error(parent, error):
               style="TarjetaTitulo.TLabel").pack(anchor="w")
     ttk.Label(tarjeta, text=str(error), style="TarjetaTexto.TLabel",
               wraplength=700, justify="left").pack(anchor="w", pady=(4, 0))
+
+
+def limitar_campo(entry, maximo=50, solo_numeros=False):
+    """Aplica a un Entry el límite definido para su columna."""
+    return limitar_entry(entry, maximo=maximo, solo_numeros=solo_numeros)
+
 
 class GraficoBarras(tk.Canvas):
     def __init__(self, parent, datos, ancho=400, alto=200):

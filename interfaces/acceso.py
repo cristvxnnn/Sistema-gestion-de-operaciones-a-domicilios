@@ -1,6 +1,10 @@
 from tkinter import ttk, messagebox
 
 from database.conexion import ErrorBD
+from interfaces.componentes import limitar_campo
+from interfaces.validaciones import (
+    MAX_BIGINT, MAX_IDENTIFICACION, MAX_TEXTO_SQL, motivo_correo_invalido,
+    validar_identificacion)
 from operaciones.accesos import (
     buscar_cliente, buscar_domiciliario, listar_barrios, listar_medios_transporte,
     registrar_cliente, registrar_domiciliario)
@@ -27,9 +31,6 @@ CAMPOS_DOMICILIARIO = [
     ("correo", "Correo electrónico", "texto", True),
     ("idMedioTransporte", "Medio de transporte", "combo", True),
 ]
-
-MAX_INT = 2147483647
-
 
 class PantallaAcceso(ttk.Frame):
     def __init__(self, parent, ventana=None, rol="cliente"):
@@ -61,14 +62,16 @@ class PantallaAcceso(ttk.Frame):
         ttk.Label(formulario, text="Número de identificación", style="Campo.TLabel").pack()
         self.ent_ingreso = ttk.Entry(formulario, width=30)
         self.ent_ingreso.pack(pady=(4, 14))
+        limitar_campo(self.ent_ingreso, MAX_IDENTIFICACION, solo_numeros=True)
         self.ent_ingreso.bind("<Return>", lambda e: self._ingresar())
         ttk.Button(formulario, text="Ingresar", style="Accion.TButton",
                    command=self._ingresar).pack()
 
     def _ingresar(self):
         texto = self.ent_ingreso.get().strip()
-        if not texto.isdigit():
-            messagebox.showwarning("Identificación no válida", "Escribe solo números.")
+        error_identificacion = validar_identificacion(texto)
+        if error_identificacion:
+            messagebox.showwarning("Identificación no válida", error_identificacion)
             return
         try:
             if self.rol == "cliente":
@@ -100,13 +103,25 @@ class PantallaAcceso(ttk.Frame):
                                       state="readonly", width=27)
             else:
                 widget = ttk.Entry(formulario, width=30)
+                if clave == "identificacion":
+                    limitar_campo(widget, MAX_IDENTIFICACION, solo_numeros=True)
+                elif clave == "telefono":
+                    limitar_campo(widget, MAX_BIGINT, solo_numeros=True)
+                else:
+                    limitar_campo(widget, MAX_TEXTO_SQL)
             widget.grid(row=fila * 2 + 1, column=col, sticky="w", padx=(0, 24), pady=(2, 6))
             self.widgets[clave] = widget
 
         filas = (len(self.campos) + 1) // 2
+        if self.rol == "cliente":
+            ttk.Label(
+                formulario,
+                text="Si tu barrio no aparece, todavía no tenemos cobertura allí.",
+                style="TarjetaTexto.TLabel").grid(
+                    row=filas * 2, column=0, columnspan=4, sticky="w", pady=(0, 2))
         ttk.Button(formulario, text="Registrarme", style="Accion.TButton",
                    command=self._registrar).grid(row=filas * 2 + 1, column=0,
-                                                 columnspan=4, pady=(18, 0))
+                                                  columnspan=4, pady=(18, 0))
 
     def _cargar_opciones(self):
         try:
@@ -133,17 +148,21 @@ class PantallaAcceso(ttk.Frame):
             if tipo == "entero":
                 if not texto.isdigit():
                     raise ValueError(f"«{nombre}» debe contener solo números.")
+                if clave == "identificacion":
+                    error_identificacion = validar_identificacion(texto)
+                    if error_identificacion:
+                        raise ValueError(error_identificacion)
                 valor = int(texto)
-                if clave == "identificacion" and valor > MAX_INT:
-                    raise ValueError(f"La identificación no puede superar {MAX_INT}.")
                 datos[clave] = valor
             elif tipo == "combo":
                 datos[clave] = self.opciones[clave][texto]
             else:
-                if len(texto) > 50:
-                    raise ValueError(f"«{nombre}» admite máximo 50 caracteres.")
-                if clave == "correo" and "@" not in texto:
-                    raise ValueError("Escribe un correo electrónico válido.")
+                if len(texto) > MAX_TEXTO_SQL:
+                    raise ValueError(f"«{nombre}» admite máximo {MAX_TEXTO_SQL} caracteres.")
+                if clave == "correo":
+                    error_correo = motivo_correo_invalido(texto)
+                    if error_correo:
+                        raise ValueError(error_correo)
                 datos[clave] = texto
         return datos
 

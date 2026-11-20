@@ -55,6 +55,24 @@ def listar_tipos_incidente():
         "SELECT idTipoIncidente, nombreTipoIncidente FROM tipoIncidente ORDER BY idTipoIncidente")
 
 
+def asegurar_tipo_incidente_otro():
+    """Crea el tipo Otro si la base inicial todavía no lo contiene."""
+    encontrado = ejecutar_consulta(
+        "SELECT idTipoIncidente FROM tipoIncidente "
+        "WHERE LOWER(nombreTipoIncidente) = 'otro' LIMIT 1")
+    if encontrado:
+        return int(encontrado[0]["idTipoIncidente"])
+
+    fila = ejecutar_consulta(
+        "SELECT COALESCE(MAX(idTipoIncidente), 0) + 1 AS siguiente "
+        "FROM tipoIncidente")[0]
+    siguiente = int(fila["siguiente"])
+    ejecutar_comando(
+        "INSERT INTO tipoIncidente (idTipoIncidente, nombreTipoIncidente) "
+        "VALUES (%s, %s)", (siguiente, "Otro"))
+    return siguiente
+
+
 def registrar_incidente(id_tipo, descripcion, numero_solicitud):
     """INSERT en incidente. El trigger cambiar_estado_incidente puede cancelar la solicitud."""
     fila = ejecutar_consulta(

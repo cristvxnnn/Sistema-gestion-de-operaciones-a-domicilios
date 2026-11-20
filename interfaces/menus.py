@@ -3,7 +3,8 @@ from interfaces.cliente import (
     PanelResumenCliente, PanelMisSolicitudes, PanelNuevaSolicitud, PanelMisIncidentes)
 from interfaces.domiciliario import (
     PanelDisponibles, PanelMisSolicitudesDom, PanelRegistrarIncidente)
-from interfaces.admin import PanelDashboard, PanelSolicitudesAdmin, PanelConsultas
+from interfaces.admin import (
+    PanelDashboard, PanelSolicitudesAdmin, PanelConsultas, PanelBarriosAdmin)
 
 TITULOS_ROL = {
     "cliente": "Cliente",
@@ -14,9 +15,9 @@ TITULOS_ROL = {
 # rol -> lista de (clave, texto del menú, clase del panel)
 MENUS = {
     "cliente": [
-        ("resumen", "Mi resumen", PanelResumenCliente),
-        ("mis_solicitudes", "Mis solicitudes", PanelMisSolicitudes),
         ("nueva_solicitud", "Crear solicitud", PanelNuevaSolicitud),
+        ("mis_solicitudes", "Mis solicitudes", PanelMisSolicitudes),
+        ("resumen", "Mi resumen", PanelResumenCliente),
         ("mis_incidentes", "Mis incidentes", PanelMisIncidentes),
     ],
     "domiciliario": [
@@ -27,6 +28,7 @@ MENUS = {
     "admin": [
         ("dashboard", "Dashboard", PanelDashboard),
         ("solicitudes", "Solicitudes", PanelSolicitudesAdmin),
+        ("barrios", "Barrios", PanelBarriosAdmin),
         ("consultas", "Consultas", PanelConsultas),
     ],
 }

@@ -1,5 +1,5 @@
-"""Operaciones del rol administrador: indicadores, solicitudes y consultas del proyecto."""
-from database.conexion import ejecutar_consulta, llamar_procedimiento
+"""Operaciones del rol administrador: indicadores, catálogos y consultas."""
+from database.conexion import ejecutar_consulta, ejecutar_comando, llamar_procedimiento
 
 
 def solicitudes_por_estado():
@@ -38,6 +38,41 @@ def solicitudes_recientes(limite=7):
 def listar_estados():
     return ejecutar_consulta(
         "SELECT idEstadoSolicitud, nombreEstado FROM estadoSolicitud ORDER BY idEstadoSolicitud")
+
+
+def listar_comunas():
+    """Devuelve las comunas disponibles para registrar un barrio."""
+    return ejecutar_consulta(
+        "SELECT idComuna, nombreComuna FROM comuna ORDER BY nombreComuna")
+
+
+def listar_barrios():
+    """Lista barrios con la comuna a la que pertenecen."""
+    return ejecutar_consulta(
+        "SELECT b.idBarrio, b.nombreBarrio, c.nombreComuna "
+        "FROM barrio b JOIN comuna c ON b.idComuna = c.idComuna "
+        "ORDER BY c.nombreComuna, b.nombreBarrio")
+
+
+def crear_barrio(nombre, id_comuna):
+    """Registra un barrio nuevo sin permitir duplicados por nombre."""
+    nombre = nombre.strip()
+    if not nombre:
+        raise ValueError("El nombre del barrio es obligatorio.")
+    if len(nombre) > 50:
+        raise ValueError("El nombre del barrio admite máximo 50 caracteres.")
+    existente = ejecutar_consulta(
+        "SELECT idBarrio FROM barrio WHERE LOWER(nombreBarrio) = LOWER(%s) LIMIT 1",
+        (nombre,))
+    if existente:
+        raise ValueError("Ya existe un barrio con ese nombre.")
+
+    fila = ejecutar_consulta(
+        "SELECT COALESCE(MAX(idBarrio), 0) + 1 AS siguiente FROM barrio")[0]
+    siguiente = int(fila["siguiente"])
+    return ejecutar_comando(
+        "INSERT INTO barrio (idBarrio, nombreBarrio, idComuna) VALUES (%s, %s, %s)",
+        (siguiente, nombre, id_comuna))
 
 
 def listar_solicitudes(id_estado=None):
