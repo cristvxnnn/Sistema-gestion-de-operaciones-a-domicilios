@@ -22,6 +22,16 @@ CATALOGO_PRODUCTOS = {
             "precio": 4500,
             "imagen": "https://placehold.co/160x100/png?text=Leche",
         },
+        {
+            "nombre": "Pan tajado",
+            "precio": 6200,
+            "imagen": "https://placehold.co/160x100/png?text=Pan",
+        },
+        {
+            "nombre": "Queso tajado",
+            "precio": 11500,
+            "imagen": "https://placehold.co/160x100/png?text=Queso",
+        },
     ],
     "Cruz Verde": [
         {
@@ -38,6 +48,16 @@ CATALOGO_PRODUCTOS = {
             "nombre": "Gasas estériles",
             "precio": 5500,
             "imagen": "https://placehold.co/160x100/png?text=Gasas",
+        },
+        {
+            "nombre": "Suero oral",
+            "precio": 9500,
+            "imagen": "https://placehold.co/160x100/png?text=Suero",
+        },
+        {
+            "nombre": "Ibuprofeno",
+            "precio": 7200,
+            "imagen": "https://placehold.co/160x100/png?text=Ibuprofeno",
         },
     ],
     "Crepes & Waffles": [
@@ -56,6 +76,16 @@ CATALOGO_PRODUCTOS = {
             "precio": 9000,
             "imagen": "https://placehold.co/160x100/png?text=Limonada",
         },
+        {
+            "nombre": "Helado",
+            "precio": 11000,
+            "imagen": "https://placehold.co/160x100/png?text=Helado",
+        },
+        {
+            "nombre": "Pita griega",
+            "precio": 24000,
+            "imagen": "https://placehold.co/160x100/png?text=Pita",
+        },
     ],
     "Farmatodo": [
         {
@@ -72,6 +102,16 @@ CATALOGO_PRODUCTOS = {
             "nombre": "Curitas",
             "precio": 6000,
             "imagen": "https://placehold.co/160x100/png?text=Curitas",
+        },
+        {
+            "nombre": "Protector solar",
+            "precio": 32000,
+            "imagen": "https://placehold.co/160x100/png?text=Protector",
+        },
+        {
+            "nombre": "Gel antibacterial",
+            "precio": 7000,
+            "imagen": "https://placehold.co/160x100/png?text=Gel",
         },
     ],
     "Frisby": [
@@ -90,6 +130,16 @@ CATALOGO_PRODUCTOS = {
             "precio": 5000,
             "imagen": "https://placehold.co/160x100/png?text=Gaseosa",
         },
+        {
+            "nombre": "Frisby snacks",
+            "precio": 16500,
+            "imagen": "https://placehold.co/160x100/png?text=Snacks",
+        },
+        {
+            "nombre": "Ensalada coleslaw",
+            "precio": 6500,
+            "imagen": "https://placehold.co/160x100/png?text=Ensalada",
+        },
     ],
     "Surtifamiliar": [
         {
@@ -106,6 +156,16 @@ CATALOGO_PRODUCTOS = {
             "nombre": "Azúcar",
             "precio": 4500,
             "imagen": "https://placehold.co/160x100/png?text=Azucar",
+        },
+        {
+            "nombre": "Frijol",
+            "precio": 7800,
+            "imagen": "https://placehold.co/160x100/png?text=Frijol",
+        },
+        {
+            "nombre": "Café molido",
+            "precio": 13500,
+            "imagen": "https://placehold.co/160x100/png?text=Cafe",
         },
     ],
     "Droquímicos Cali": [
@@ -124,6 +184,16 @@ CATALOGO_PRODUCTOS = {
             "precio": 7000,
             "imagen": "https://placehold.co/160x100/png?text=Guantes",
         },
+        {
+            "nombre": "Jabón líquido",
+            "precio": 11000,
+            "imagen": "https://placehold.co/160x100/png?text=Jabon",
+        },
+        {
+            "nombre": "Limpiavidrios",
+            "precio": 6800,
+            "imagen": "https://placehold.co/160x100/png?text=Limpiador",
+        },
     ],
     "Inter Rapidísimo S.A.": [
         {
@@ -140,6 +210,16 @@ CATALOGO_PRODUCTOS = {
             "nombre": "Sobre manila",
             "precio": 3000,
             "imagen": "https://placehold.co/160x100/png?text=Sobre",
+        },
+        {
+            "nombre": "Cinta embalaje",
+            "precio": 4500,
+            "imagen": "https://placehold.co/160x100/png?text=Cinta",
+        },
+        {
+            "nombre": "Plástico burbuja",
+            "precio": 6000,
+            "imagen": "https://placehold.co/160x100/png?text=Burbuja",
         },
     ],
     "Servientrega": [
@@ -158,6 +238,11 @@ CATALOGO_PRODUCTOS = {
             "precio": 3500,
             "imagen": "https://placehold.co/160x100/png?text=Sobre",
         },
+        {
+            "nombre": "Bolsa mensajería",
+            "precio": 2500,
+            "imagen": "https://placehold.co/160x100/png?text=Bolsa",
+        },
     ],
     "Krika": [
         {
@@ -174,6 +259,11 @@ CATALOGO_PRODUCTOS = {
             "nombre": "Producto premium",
             "precio": 40000,
             "imagen": "https://placehold.co/160x100/png?text=Producto+3",
+        },
+        {
+            "nombre": "Kit belleza",
+            "precio": 32000,
+            "imagen": "https://placehold.co/160x100/png?text=Kit+4",
         },
     ],
 }
