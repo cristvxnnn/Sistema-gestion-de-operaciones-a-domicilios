@@ -3,7 +3,58 @@
 Es un catálogo de demostración. Sus claves están preparadas para migrarse
 posteriormente a una tabla producto y a una tabla detalleSolicitud.
 """
+from pathlib import Path
 import unicodedata
+
+
+IMAGENES_DIR = Path(__file__).resolve().parent.parent / "imagenes"
+
+# Archivos entregados en la carpeta imagenes. Un mismo producto puede aparecer
+# en más de un establecimiento y reutilizar la misma imagen local.
+IMAGENES_LOCALES = {
+    "Arroz": "Arroz-Blanco-CARULLA-1000-gr-3181783_a.jpg",
+    "Huevos": "HUEVO-ROJO-X-30-AAA-1513316_a.jpg",
+    "Leche": "Leche-Entera-UHT-CARULLA-1100-ml-3374934_a.jpg",
+    "Pan tajado": "Pan-Tajado-Blanco-CARULLA-600-gr-3317922_a.jpg",
+    "Queso tajado": "Queso-Mozzarella-Tajado-CARULLA-400-gr-3298215_a.jpg",
+    "Acetaminofén": "waffle.jpg.jpeg",
+    "Alcohol antiséptico": "Alcohol-Antiseptico-OSA-700ml-1-1024x1024.jpg.jpeg",
+    "Gasas estériles": "gasas.jpg.jpeg",
+    "Suero oral": "suero_oral.jpg.jpeg",
+    "Ibuprofeno": "ibuprofeno.jpg.jpeg",
+    "Crepe de pollo": "crepe_pollo.jpg.jpeg",
+    "Waffle": "pexels-rodrigo-kokama-538969654-18857730.jpg.jpeg",
+    "Limonada": "Limonada.jpg",
+    "Helado": "helado.jpg",
+    "Pita griega": "pitagriega.jpg",
+    "Vitamina C": "vitamina_c.jpg.jpeg",
+    "Curitas": "curitas.jpg.jpeg",
+    "Protector solar": "protector_solar.jpg.jpeg",
+    "Gel antibacterial": "gel_antibacterial.jpg.jpeg",
+    "Pollo personal": "PolloPersonal.jpg",
+    "Papas fritas": "papasFritas.jpg",
+    "Gaseosa": "Gaseosa-Colombiana-x-400-ml-1058142_a.jpg",
+    "Frisby snacks": "firsbysnacks.jpg",
+    "Ensalada coleslaw": "Ensalada coleslaw.jpg",
+    "Aceite": "Aceites-Aceites-Liquidos-ACESURTIFAMILIAR-x500ml-SOYA-552420201112135902.webp",
+    "Azúcar": "Granos-Empacados-Granos-Empacados-AZUCPROVIDENCIA-x2500g-BCA-5620201112095402SURTIFAMILIAR.webp",
+    "Frijol": "FrijolSurtifamiliar.jpg",
+    "Café molido": "20240502082646-Cafe-Cafe-Molido-Cafe-Surtifamiliar-x500g-Molido-2241202405020826463689.webp",
+    "Detergente": "detergente.jpg",
+    "Desinfectante": "limpiador-desinfectante-x3785.jpg",
+    "Guantes": "guantes.jpg",
+    "Jabón líquido": "jabon-liquido-antibact-avena-coco-1000ml-12006237-01.png.png",
+    "Limpiavidrios": "limpiavidrios.webp",
+}
+
+# Permite usar la imagen específica de Arroz de Surtifamiliar sin perder la
+# imagen de Arroz de Carulla.
+IMAGENES_POR_ESTABLECIMIENTO = {
+    ("Surtifamiliar", "Arroz"): (
+        "20260623105835-Granos-Empacados-Granos-Empacados-Arroz-"
+        "Surtifamiliar-X2500g-303202606231058356791.webp"
+    ),
+}
 
 CATALOGO_PRODUCTOS = {
     "Carulla": [
@@ -267,6 +318,22 @@ CATALOGO_PRODUCTOS = {
         },
     ],
 }
+
+
+def _imagen_local(nombre_archivo):
+    """Devuelve una URL file:// compatible con los cargadores de imágenes."""
+    return (IMAGENES_DIR / nombre_archivo).resolve().as_uri()
+
+
+# Sustituye los placeholders del catálogo por los archivos entregados.
+for _establecimiento, _productos in CATALOGO_PRODUCTOS.items():
+    for _producto in _productos:
+        nombre_archivo = IMAGENES_POR_ESTABLECIMIENTO.get(
+            (_establecimiento, _producto["nombre"]),
+            IMAGENES_LOCALES.get(_producto["nombre"]),
+        )
+        if nombre_archivo:
+            _producto["imagen"] = _imagen_local(nombre_archivo)
 
 
 def _normalizar_nombre(nombre):
