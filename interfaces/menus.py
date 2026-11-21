@@ -1,6 +1,6 @@
 """Menú lateral de cada rol."""
 from interfaces.cliente import (
-    PanelResumenCliente, PanelMisSolicitudes, PanelMisIncidentes)
+    PanelResumenCliente, PanelMisSolicitudes)
 from interfaces.cliente_marketplace import PanelNuevaSolicitudMarketplace
 from interfaces.domiciliario import (
     PanelDisponibles, PanelMisSolicitudesDom, PanelRegistrarIncidente)
@@ -21,7 +21,6 @@ MENUS = {
         ("nueva_solicitud", "Crear solicitud", PanelNuevaSolicitudMarketplace),
         ("mis_solicitudes", "Mis solicitudes", PanelMisSolicitudes),
         ("resumen", "Mi resumen", PanelResumenCliente),
-        ("mis_incidentes", "Mis incidentes", PanelMisIncidentes),
     ],
     "domiciliario": [
         ("disponibles", "Solicitudes disponibles", PanelDisponibles),
