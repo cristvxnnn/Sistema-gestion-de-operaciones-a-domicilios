@@ -26,41 +26,41 @@ def aplicar_estilos(root):
                 borderwidth=1, bordercolor=c["borde"])
 
     s.configure("Marca.TLabel", background=c["tarjeta"], foreground=c["texto"],
-                font=(FUENTE, 15, "bold"))
+                 font=(FUENTE, 16, "bold"))
     s.configure("MarcaSub.TLabel", background=c["tarjeta"],
-                foreground=c["texto_suave"], font=(FUENTE, 9))
+                 foreground=c["texto_suave"], font=(FUENTE, 10))
     s.configure("Titulo.TLabel", background=c["fondo"], foreground=c["texto"],
-                font=(FUENTE, 20, "bold"))
+                 font=(FUENTE, 22, "bold"))
     s.configure("Subtitulo.TLabel", background=c["fondo"],
-                foreground=c["texto_suave"], font=(FUENTE, 10))
+                 foreground=c["texto_suave"], font=(FUENTE, 11))
     s.configure("TarjetaTitulo.TLabel", background=c["tarjeta"],
-                foreground=c["texto"], font=(FUENTE, 12, "bold"))
+                 foreground=c["texto"], font=(FUENTE, 13, "bold"))
     s.configure("TarjetaTexto.TLabel", background=c["tarjeta"],
-                foreground=c["texto_suave"], font=(FUENTE, 9))
+                 foreground=c["texto_suave"], font=(FUENTE, 10))
     s.configure("Estado.TLabel", background=c["fondo"],
-                foreground=c["texto_suave"], font=(FUENTE, 9))
+                 foreground=c["texto_suave"], font=(FUENTE, 10))
 
     # Botones del menú lateral
     s.configure("Menu.TButton", background=c["tarjeta"], foreground=c["texto"],
-                font=(FUENTE, 11), anchor="w", padding=(18, 10),
+                 font=(FUENTE, 12), anchor="w", padding=(18, 10),
                 borderwidth=0, relief="flat", focuscolor=c["tarjeta"])
     s.map("Menu.TButton", background=[("active", c["menu_hover"])])
     s.configure("MenuActivo.TButton", background=c["acento"],
-                foreground="#FFFFFF", font=(FUENTE, 11, "bold"), anchor="w",
+                 foreground="#FFFFFF", font=(FUENTE, 12, "bold"), anchor="w",
                 padding=(18, 10), borderwidth=0, relief="flat",
                 focuscolor=c["acento"])
     s.map("MenuActivo.TButton", background=[("active", "#E66F10")])
 
     # Botón de acción principal
     s.configure("Accion.TButton", background=c["acento"], foreground="#FFFFFF",
-                font=(FUENTE, 10, "bold"), padding=(14, 6), borderwidth=0)
+                 font=(FUENTE, 11, "bold"), padding=(14, 7), borderwidth=0)
     s.map("Accion.TButton", background=[("active", "#E66F10")])
 
     # Tablas
     s.configure("Treeview", background=c["tarjeta"], fieldbackground=c["tarjeta"],
-                foreground=c["texto"], rowheight=28, font=(FUENTE, 10))
+                 foreground=c["texto"], rowheight=31, font=(FUENTE, 11))
     s.configure("Treeview.Heading", background=c["acento_claro"],
-                foreground=c["acento"], font=(FUENTE, 10, "bold"),
+                 foreground=c["acento"], font=(FUENTE, 11, "bold"),
                 padding=(10, 8), relief="flat")
     s.map("Treeview", background=[("selected", c["acento_claro"])],
           foreground=[("selected", c["texto"])])
@@ -75,10 +75,10 @@ def aplicar_estilos(root):
           selectbackground=[("readonly", c["tarjeta"])],
           selectforeground=[("readonly", c["texto"])])
     s.configure("Campo.TLabel", background=c["tarjeta"], foreground=c["texto"],
-                font=(FUENTE, 10))
+                 font=(FUENTE, 11))
     s.configure("Secundario.TButton", background=c["tarjeta"], foreground=c["acento"],
-                font=(FUENTE, 10, "bold"), padding=(14, 6), borderwidth=1,
+                 font=(FUENTE, 11, "bold"), padding=(14, 7), borderwidth=1,
                 bordercolor=c["acento"])
     s.map("Secundario.TButton", background=[("active", c["acento_claro"])])
     s.configure("TNotebook", background=c["fondo"], borderwidth=0)
-    s.configure("TNotebook.Tab", font=(FUENTE, 10, "bold"), padding=(16, 8))
+    s.configure("TNotebook.Tab", font=(FUENTE, 11, "bold"), padding=(16, 9))

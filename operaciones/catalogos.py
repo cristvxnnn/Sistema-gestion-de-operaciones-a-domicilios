@@ -45,6 +45,30 @@ IMAGENES_LOCALES = {
     "Guantes": "guantes.jpg",
     "Jabón líquido": "jabon-liquido-antibact-avena-coco-1000ml-12006237-01.png.png",
     "Limpiavidrios": "limpiavidrios.webp",
+    "Envío nacional": "envioNacional.jpg",
+    "Caja pequeña": "cajaPequeñaInter.jpg",
+    "Sobre manila": "sobreManila.jpg",
+    "Cinta embalaje": "CintaDeEmbalaje.jpg",
+    "Plástico burbuja": "plastico burbuja inter rapidisimo.jpg",
+    "Guía urbana": "guía urbana servientrega.jpg",
+    "Caja mediana": "Caja mediana servientrega.png",
+    "Sobre de seguridad": "SobreDe seguridad servientrega.webp",
+    "Bolsa mensajería": "Bolsa de mensajeria servientrega.jpg",
+    "Wella Fusion Reparación Intensiva 250 ml": (
+        "Wella Shampoo Fusion Reparación Intensiva.jpg"
+    ),
+    "Recamier Vegan Keratin Salon In 1000 ml": (
+        "Recamier Shampoo Salon In Vegan Keratin — 1000 ml.jpg"
+    ),
+    "Recamier Liss Control Salon In 1000 ml": (
+        "Recamier Shampoo Salon In Liss Control — 1000 ml .jpg"
+    ),
+    "Lehit Ampolleta Ácido Hialurónico 15 ml": (
+        "Lehit Ampolleta Ácido Hialurónico — 15 ml.png"
+    ),
+    "Ana María Limpiador Equilibrante": (
+        "Ana María Limpiador Equilibrante.jpg"
+    ),
 }
 
 # Permite usar la imagen específica de Arroz de Surtifamiliar sin perder la
@@ -297,24 +321,29 @@ CATALOGO_PRODUCTOS = {
     ],
     "Krika": [
         {
-            "nombre": "Producto básico",
-            "precio": 15000,
-            "imagen": "https://placehold.co/160x100/png?text=Producto+1",
+            "nombre": "Wella Fusion Reparación Intensiva 250 ml",
+            "precio": 113400,
+            "imagen": "https://placehold.co/160x100/png?text=Wella",
         },
         {
-            "nombre": "Producto estándar",
-            "precio": 25000,
-            "imagen": "https://placehold.co/160x100/png?text=Producto+2",
+            "nombre": "Recamier Vegan Keratin Salon In 1000 ml",
+            "precio": 36000,
+            "imagen": "https://placehold.co/160x100/png?text=Recamier",
         },
         {
-            "nombre": "Producto premium",
-            "precio": 40000,
-            "imagen": "https://placehold.co/160x100/png?text=Producto+3",
+            "nombre": "Recamier Liss Control Salon In 1000 ml",
+            "precio": 67428,
+            "imagen": "https://placehold.co/160x100/png?text=Recamier",
         },
         {
-            "nombre": "Kit belleza",
-            "precio": 32000,
-            "imagen": "https://placehold.co/160x100/png?text=Kit+4",
+            "nombre": "Lehit Ampolleta Ácido Hialurónico 15 ml",
+            "precio": 8900,
+            "imagen": "https://placehold.co/160x100/png?text=Lehit",
+        },
+        {
+            "nombre": "Ana María Limpiador Equilibrante",
+            "precio": 28700,
+            "imagen": "https://placehold.co/160x100/png?text=Ana+Maria",
         },
     ],
 }

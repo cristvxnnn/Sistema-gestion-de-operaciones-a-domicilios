@@ -13,10 +13,15 @@ class VentanaPrincipal(ctk.CTk):
     def __init__(self):
         ctk.set_appearance_mode("light")
         ctk.set_default_color_theme("blue")
+        ctk.set_widget_scaling(1.08)
         super().__init__()
         self.title("DOMIYA · Domicilios en Cali")
-        self.geometry("1280x800")
-        self.minsize(1024, 680)
+        ancho = min(1366, self.winfo_screenwidth() - 40)
+        alto = min(820, self.winfo_screenheight() - 80)
+        posicion_x = max((self.winfo_screenwidth() - ancho) // 2, 0)
+        posicion_y = max((self.winfo_screenheight() - alto) // 2, 0)
+        self.geometry(f"{ancho}x{alto}+{posicion_x}+{posicion_y}")
+        self.resizable(False, False)
         aplicar_estilos(self)
 
         self.sesion = None          # {"rol", "identificacion", "nombre"} o None
