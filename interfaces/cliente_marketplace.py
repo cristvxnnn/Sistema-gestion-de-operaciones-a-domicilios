@@ -18,9 +18,9 @@ from operaciones.accesos import listar_barrios
 from operaciones.catalogos import catalogo_para_establecimiento
 
 try:
-    from PIL import Image, ImageTk
+    from PIL import Image, ImageOps, ImageTk
 except ImportError:
-    Image = ImageTk = None
+    Image = ImageOps = ImageTk = None
 
 
 ICONOS_CATEGORIA = {
@@ -824,7 +824,6 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
                 with urlopen(url, timeout=5) as respuesta:
                     imagen = Image.open(
                         BytesIO(respuesta.read())).convert("RGB")
-                    imagen.thumbnail((190, 105))
             except Exception:
                 imagen = None
             try:
@@ -845,6 +844,13 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
         if imagen is None:
             etiqueta.configure(text="Imagen no disponible")
             return
+        ancho = max(etiqueta.winfo_width(), 260)
+        alto = max(etiqueta.winfo_height(), 112)
+        remuestreos = getattr(Image, "Resampling", Image)
+        remuestreo = getattr(remuestreos, "LANCZOS", 1)
+        imagen = ImageOps.fit(
+            imagen, (ancho, alto), method=remuestreo,
+            centering=(0.5, 0.5))
         foto = ImageTk.PhotoImage(imagen)
         self.imagenes_cache[url] = foto
         etiqueta.configure(image=foto, text="")
