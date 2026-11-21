@@ -146,8 +146,8 @@ class VentanaPrincipal(ctk.CTk):
 
         navegacion = ctk.CTkScrollableFrame(
             self.menu, fg_color="transparent", corner_radius=0,
-            scrollbar_button_color="#345174",
-            scrollbar_button_hover_color="#55749A")
+            scrollbar_button_color=COLORES["acento"],
+            scrollbar_button_hover_color="#D9680B")
         navegacion.pack(fill="both", expand=True, padx=(4, 0))
         ctk.CTkLabel(
             navegacion, text="MENÚ PRINCIPAL", text_color="#93A9C5",

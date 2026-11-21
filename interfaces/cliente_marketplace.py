@@ -497,9 +497,9 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
             zona, background=COLORES["tarjeta"], highlightthickness=0)
         scrollbar = ctk.CTkScrollbar(
             zona, orientation="vertical", command=canvas.yview,
-            width=12, corner_radius=8, fg_color=COLORES["tarjeta"],
-            button_color=COLORES["borde"],
-            button_hover_color=COLORES["acento"])
+            width=18, corner_radius=9, fg_color="#D7E0EC",
+            button_color=COLORES["acento"],
+            button_hover_color="#D9680B")
         canvas.configure(yscrollcommand=scrollbar.set)
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
