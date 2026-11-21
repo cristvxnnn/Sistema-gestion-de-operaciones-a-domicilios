@@ -6,9 +6,11 @@ from database.conexion import ErrorBD
 from interfaces.panel_base import PanelBase
 from interfaces.componentes import (
     TablaDatos, GraficoBarras, tarjeta_indicador, mostrar_error, limitar_campo,
-    combo_estilizado, boton_estilizado, entrada_estilizada)
+    combo_estilizado, boton_estilizado, entrada_estilizada, entrada_busqueda,
+    ejecutar_en_segundo_plano, grilla_responsiva)
 from interfaces.validaciones import MAX_TEXTO_SQL
 from operaciones import admin as op
+from operaciones import cliente as op_cliente
 
 
 class PanelDashboard(PanelBase):
@@ -16,14 +18,41 @@ class PanelDashboard(PanelBase):
     DESCRIPCION = "Resumen general de la operación."
 
     def construir(self):
-        try:
-            estados = op.solicitudes_por_estado()
-            conteos = op.conteos_generales()
-            efectivo, electronico, total = op.facturacion()
-            recientes = op.solicitudes_recientes()
-        except ErrorBD as e:
-            mostrar_error(self.contenido, e)
-            return
+        barra = ttk.Frame(self.contenido, style="Contenido.TFrame")
+        barra.pack(fill="x", pady=(0, 8))
+        self._btn_actualizar = boton_estilizado(
+            barra, "Actualizar", self._recargar, primario=False)
+        self._btn_actualizar.pack(side="right")
+        self.lbl_actualizacion = ttk.Label(
+            barra, text="Preparando indicadores…", style="Subtitulo.TLabel")
+        self.lbl_actualizacion.pack(side="right", padx=10)
+        self.resultados = ttk.Frame(self.contenido, style="Contenido.TFrame")
+        self.resultados.pack(fill="both", expand=True)
+        self._recargar()
+
+    @staticmethod
+    def _consultar():
+        return (op.solicitudes_por_estado(), op.conteos_generales(),
+                op.facturacion(), op.solicitudes_recientes())
+
+    def _recargar(self):
+        self.lbl_actualizacion.configure(text="Actualizando datos…")
+        self._btn_actualizar.configure(state="disabled")
+        ejecutar_en_segundo_plano(
+            self, self._consultar, self._mostrar_datos, self._mostrar_error)
+
+    def _mostrar_error(self, error):
+        self.lbl_actualizacion.configure(text="No se pudo actualizar")
+        self._btn_actualizar.configure(state="normal")
+        for hijo in self.resultados.winfo_children():
+            hijo.destroy()
+        mostrar_error(self.resultados, error)
+
+    def _mostrar_datos(self, resultado):
+        estados, conteos, facturacion, recientes = resultado
+        efectivo, electronico, total = facturacion
+        for hijo in self.resultados.winfo_children():
+            hijo.destroy()
 
         def dinero(v):
             return f"${v:,.0f}"
@@ -37,15 +66,16 @@ class PanelDashboard(PanelBase):
             ("Facturado electrónico", dinero(electronico)),
             ("Total facturado", dinero(total)),
         ]
-        rejilla = ttk.Frame(self.contenido, style="Contenido.TFrame")
+        rejilla = ttk.Frame(self.resultados, style="Contenido.TFrame")
         rejilla.pack(fill="x")
-        for i in range(4):
-            rejilla.columnconfigure(i, weight=1, uniform="k")
-        for n, (titulo, valor) in enumerate(indicadores):
-            tarjeta_indicador(rejilla, titulo, valor).grid(
-                row=n // 4, column=n % 4, padx=6, pady=6, sticky="nsew")
+        tarjetas = [tarjeta_indicador(rejilla, titulo, valor)
+                    for titulo, valor in indicadores]
+        rejilla.bind(
+            "<Configure>",
+            lambda evento: grilla_responsiva(rejilla, tarjetas, evento.width))
+        self.after_idle(lambda: grilla_responsiva(rejilla, tarjetas, rejilla.winfo_width()))
 
-        inferior = ttk.Frame(self.contenido, style="Contenido.TFrame")
+        inferior = ttk.Frame(self.resultados, style="Contenido.TFrame")
         inferior.pack(fill="both", expand=True, pady=(10, 0))
 
         card_graf = ttk.Frame(inferior, style="Tarjeta.TFrame", padding=16)
@@ -64,6 +94,8 @@ class PanelDashboard(PanelBase):
             ("estado", "Estado", 85)], alto=7)
         tabla.pack(fill="both", expand=True)
         tabla.cargar(recientes)
+        self.lbl_actualizacion.configure(text="Datos actualizados")
+        self._btn_actualizar.configure(state="normal")
 
 
 class PanelSolicitudesAdmin(PanelBase):
@@ -92,27 +124,186 @@ class PanelSolicitudesAdmin(PanelBase):
         ttk.Label(barra, text="Estado:", style="Subtitulo.TLabel").pack(side="left")
         self.cmb_estado = combo_estilizado(
             barra, ["Todos"] + list(self.estados), ancho=190,
-            comando=lambda _valor: self._recargar())
+            comando=lambda _valor: self._filtrar())
         self.cmb_estado.set("Todos")
         self.cmb_estado.pack(side="left", padx=8)
-        boton_estilizado(barra, "Actualizar", self._recargar,
-                         primario=False).pack(side="left")
+        self.btn_actualizar = boton_estilizado(
+            barra, "Actualizar", self._recargar, primario=False)
+        self.btn_actualizar.pack(side="left")
         self.lbl_total = ttk.Label(barra, text="", style="Subtitulo.TLabel")
         self.lbl_total.pack(side="right")
+        self.ent_busqueda = entrada_busqueda(barra, self._buscar, ancho=230)
+        self.ent_busqueda.pack(side="right", padx=10)
 
         self.tabla = TablaDatos(self.contenido, self.COLUMNAS)
+        self.tabla.pack(fill="both", expand=True)
+        self.filas = []
+        self._recargar()
+
+    def _recargar(self):
+        self.btn_actualizar.configure(state="disabled")
+        self.lbl_total.configure(text="Actualizando solicitudes…")
+        ejecutar_en_segundo_plano(
+            self, op.listar_solicitudes, self._cargar_solicitudes,
+            self._fallo_recarga)
+
+    def _cargar_solicitudes(self, filas):
+        self.btn_actualizar.configure(state="normal")
+        self.filas = filas
+        self._filtrar()
+
+    def _fallo_recarga(self, error):
+        self.btn_actualizar.configure(state="normal")
+        self.lbl_total.configure(text="No se pudieron cargar las solicitudes")
+        messagebox.showerror("Error de base de datos", str(error))
+
+    def _filtrar(self, _valor=None):
+        estado = self.cmb_estado.get()
+        filas = self.filas if estado == "Todos" else [
+            fila for fila in self.filas if fila.get("estado") == estado]
+        self.tabla.cargar(filas)
+        self.tabla.filtrar(self.ent_busqueda.get())
+        self._actualizar_total()
+
+    def _buscar(self, texto):
+        self.tabla.filtrar(texto)
+        self._actualizar_total()
+
+    def _actualizar_total(self):
+        visibles = len(self.tabla._filas)
+        total = len(self.filas)
+        self.lbl_total.configure(text=f"{visibles} de {total} solicitud(es)")
+
+
+class PanelIncidentesAdmin(PanelBase):
+    TITULO = "Incidentes"
+    DESCRIPCION = "Consulta las novedades reportadas y sus solicitudes asociadas."
+
+    def construir(self):
+        consulta = next(
+            item for item in op.CONSULTAS
+            if item["titulo"] == "Incidentes con tipo, cliente y domiciliario")
+        self.consulta = consulta
+        barra = ttk.Frame(self.contenido, style="Contenido.TFrame")
+        barra.pack(fill="x", pady=(0, 10))
+        self.lbl_total = ttk.Label(barra, text="", style="Subtitulo.TLabel")
+        self.lbl_total.pack(side="right")
+        self.ent_busqueda = entrada_busqueda(barra, self._buscar, ancho=250)
+        self.ent_busqueda.pack(side="right", padx=10)
+        self._btn_actualizar = boton_estilizado(
+            barra, "Actualizar", self._recargar, primario=False)
+        self._btn_actualizar.pack(side="left")
+        self.tabla = TablaDatos(self.contenido, [
+            ("codigoIncidente", "Incidente", 90),
+            ("Tipo incidente", "Tipo", 150),
+            ("numeroSolicitud", "Solicitud", 90),
+            ("identificacionCliente", "ID cliente", 110),
+            ("identificacionDomiciliario", "ID domiciliario", 125),
+        ])
         self.tabla.pack(fill="both", expand=True)
         self._recargar()
 
     def _recargar(self):
-        id_estado = self.estados.get(self.cmb_estado.get())  # None si es "Todos"
-        try:
-            filas = op.listar_solicitudes(id_estado)
-        except ErrorBD as e:
-            messagebox.showerror("Error de base de datos", str(e))
-            return
+        self._btn_actualizar.configure(state="disabled")
+        self.lbl_total.configure(text="Cargando incidentes…")
+        ejecutar_en_segundo_plano(
+            self, lambda: op.ejecutar_guardada(self.consulta),
+            self._cargar, self._fallo)
+
+    def _cargar(self, filas):
+        self._btn_actualizar.configure(state="normal")
         self.tabla.cargar(filas)
-        self.lbl_total.configure(text=f"{len(filas)} solicitud(es)")
+        self.tabla.filtrar(self.ent_busqueda.get())
+        self._actualizar_total()
+
+    def _fallo(self, error):
+        self._btn_actualizar.configure(state="normal")
+        self.lbl_total.configure(text="No se pudieron cargar los incidentes")
+        messagebox.showerror("Error al cargar incidentes", str(error))
+
+    def _buscar(self, texto):
+        self.tabla.filtrar(texto)
+        self._actualizar_total()
+
+    def _actualizar_total(self):
+        self.lbl_total.configure(
+            text=f"{len(self.tabla._filas)} de "
+                 f"{len(self.tabla._todas_las_filas)} incidente(s)")
+
+
+class PanelListaAdmin(PanelBase):
+    """Base de listados de consulta para el administrador."""
+    COLUMNAS = []
+
+    def construir(self):
+        barra = ttk.Frame(self.contenido, style="Contenido.TFrame")
+        barra.pack(fill="x", pady=(0, 10))
+        self._btn_actualizar = boton_estilizado(
+            barra, "Actualizar", self._recargar, primario=False)
+        self._btn_actualizar.pack(side="left")
+        self.lbl_total = ttk.Label(barra, text="", style="Subtitulo.TLabel")
+        self.lbl_total.pack(side="right")
+        self.ent_busqueda = entrada_busqueda(barra, self._buscar, ancho=250)
+        self.ent_busqueda.pack(side="right", padx=10)
+        self.tabla = TablaDatos(self.contenido, self.COLUMNAS)
+        self.tabla.pack(fill="both", expand=True)
+        self._recargar()
+
+    def obtener_filas(self):
+        raise NotImplementedError
+
+    def _recargar(self):
+        self._btn_actualizar.configure(state="disabled")
+        self.lbl_total.configure(text="Actualizando…")
+        ejecutar_en_segundo_plano(
+            self, self.obtener_filas, self._cargar, self._fallo)
+
+    def _cargar(self, filas):
+        self._btn_actualizar.configure(state="normal")
+        self.tabla.cargar(filas)
+        self.tabla.filtrar(self.ent_busqueda.get())
+        self.lbl_total.configure(
+            text=f"{len(self.tabla._filas)} de {len(self.tabla._todas_las_filas)}")
+
+    def _buscar(self, texto):
+        self.tabla.filtrar(texto)
+        self.lbl_total.configure(
+            text=f"{len(self.tabla._filas)} de {len(self.tabla._todas_las_filas)}")
+
+    def _fallo(self, error):
+        self._btn_actualizar.configure(state="normal")
+        self.lbl_total.configure(text="No se pudieron cargar los datos")
+        messagebox.showerror("Error de base de datos", str(error))
+
+
+class PanelUsuariosAdmin(PanelListaAdmin):
+    TITULO = "Usuarios"
+    DESCRIPCION = "Consulta los clientes y domiciliarios registrados."
+    COLUMNAS = [
+        ("identificacion", "Identificación", 130),
+        ("nombre", "Nombre", 150),
+        ("apellidoPaterno", "Apellido", 150),
+        ("tipoUsuario", "Rol", 180),
+    ]
+
+    def obtener_filas(self):
+        consulta = next(
+            item for item in op.CONSULTAS
+            if item["titulo"] == "Rol de cada usuario")
+        return op.ejecutar_guardada(consulta)
+
+
+class PanelEstablecimientosAdmin(PanelListaAdmin):
+    TITULO = "Establecimientos"
+    DESCRIPCION = "Consulta los establecimientos y su categoría."
+    COLUMNAS = [
+        ("codigoEstablecimiento", "Código", 110),
+        ("nombre", "Establecimiento", 250),
+        ("tipo", "Categoría", 190),
+    ]
+
+    def obtener_filas(self):
+        return op_cliente.listar_establecimientos()
 
 
 class PanelBarriosAdmin(PanelBase):

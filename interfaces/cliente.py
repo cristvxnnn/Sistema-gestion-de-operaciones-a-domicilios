@@ -9,7 +9,8 @@ from database.conexion import ErrorBD
 from interfaces.panel_base import PanelBase
 from interfaces.componentes import (
     TablaDatos, tarjeta_indicador, mostrar_error, limitar_campo,
-    combo_estilizado, boton_estilizado, entrada_estilizada)
+    combo_estilizado, boton_estilizado, entrada_estilizada, entrada_busqueda,
+    ejecutar_en_segundo_plano, grilla_responsiva, normalizar_busqueda)
 from interfaces.validaciones import MAX_TEXTO_SQL
 from operaciones import cliente as op
 from operaciones.accesos import listar_barrios
@@ -27,12 +28,25 @@ class PanelResumenCliente(PanelBase):
 
     def construir(self):
         id_cliente = self.ventana.sesion["identificacion"]
-        try:
-            estados = op.resumen_por_estado(id_cliente)
-            gastado = op.total_gastado(id_cliente)
-        except ErrorBD as e:
-            mostrar_error(self.contenido, e)
-            return
+        self.lbl_cargando = ttk.Label(
+            self.contenido, text="Cargando tu resumen…",
+            style="Subtitulo.TLabel")
+        self.lbl_cargando.pack(anchor="w", padx=12, pady=12)
+        ejecutar_en_segundo_plano(
+            self, lambda: self._consultar(id_cliente),
+            self._mostrar_resumen, self._fallo_resumen)
+
+    @staticmethod
+    def _consultar(id_cliente):
+        return op.resumen_por_estado(id_cliente), op.total_gastado(id_cliente)
+
+    def _fallo_resumen(self, error):
+        self.lbl_cargando.destroy()
+        mostrar_error(self.contenido, error)
+
+    def _mostrar_resumen(self, resultado):
+        self.lbl_cargando.destroy()
+        estados, gastado = resultado
 
         indicadores = [("Total de solicitudes", sum(f["total"] for f in estados))]
         indicadores += [(f["estado"], f["total"]) for f in estados]
@@ -40,12 +54,12 @@ class PanelResumenCliente(PanelBase):
 
         rejilla = ttk.Frame(self.contenido, style="Contenido.TFrame")
         rejilla.pack(fill="x")
-        columnas = 4
-        for i in range(columnas):
-            rejilla.columnconfigure(i, weight=1, uniform="k")
-        for n, (titulo, valor) in enumerate(indicadores):
-            tarjeta_indicador(rejilla, titulo, valor).grid(
-                row=n // columnas, column=n % columnas, padx=6, pady=6, sticky="nsew")
+        tarjetas = [tarjeta_indicador(rejilla, titulo, valor)
+                    for titulo, valor in indicadores]
+        rejilla.bind(
+            "<Configure>",
+            lambda evento: grilla_responsiva(rejilla, tarjetas, evento.width))
+        self.after_idle(lambda: grilla_responsiva(rejilla, tarjetas, rejilla.winfo_width()))
 
 
 class PanelMisSolicitudes(PanelBase):
@@ -63,20 +77,72 @@ class PanelMisSolicitudes(PanelBase):
     def construir(self):
         barra = ttk.Frame(self.contenido, style="Contenido.TFrame")
         barra.pack(fill="x", pady=(0, 10))
-        boton_estilizado(barra, "Cancelar solicitud seleccionada",
-                         self._cancelar).pack(side="left")
-        boton_estilizado(barra, "Actualizar", self._recargar,
-                         primario=False).pack(side="left", padx=8)
+        self.btn_cancelar = boton_estilizado(
+            barra, "Cancelar solicitud seleccionada", self._cancelar)
+        self.btn_cancelar.configure(state="disabled")
+        self.btn_cancelar.pack(side="left")
+        self.btn_actualizar = boton_estilizado(
+            barra, "Actualizar", self._recargar, primario=False)
+        self.btn_actualizar.pack(side="left", padx=8)
+        self.lbl_total = ttk.Label(barra, text="", style="Subtitulo.TLabel")
+        self.lbl_total.pack(side="right")
+        self.ent_busqueda = entrada_busqueda(barra, self._filtrar, ancho=220)
+        self.ent_busqueda.pack(side="right", padx=8)
+        self.cmb_estado = combo_estilizado(
+            barra, ["Todos"], ancho=155,
+            comando=lambda _valor: self._filtrar())
+        self.cmb_estado.set("Todos")
+        self.cmb_estado.pack(side="right", padx=8)
 
         self.tabla = TablaDatos(self.contenido, self.COLUMNAS)
         self.tabla.pack(fill="both", expand=True)
+        self.tabla.arbol.bind("<<TreeviewSelect>>", self._actualizar_accion)
+        self.solicitudes = []
         self._recargar()
 
     def _recargar(self):
-        try:
-            self.tabla.cargar(op.listar_solicitudes(self.ventana.sesion["identificacion"]))
-        except ErrorBD as e:
-            messagebox.showerror("Error de base de datos", str(e))
+        self.btn_actualizar.configure(state="disabled")
+        self.btn_cancelar.configure(state="disabled")
+        self.lbl_total.configure(text="Actualizando…")
+        ejecutar_en_segundo_plano(
+            self,
+            lambda: op.listar_solicitudes(self.ventana.sesion["identificacion"]),
+            self._cargar_solicitudes, self._fallo_recarga)
+
+    def _cargar_solicitudes(self, filas):
+        self.btn_actualizar.configure(state="normal")
+        self.solicitudes = filas
+        estados = sorted({fila["estado"] for fila in self.solicitudes if fila.get("estado")})
+        actual = self.cmb_estado.get()
+        self.cmb_estado.configure(values=["Todos"] + estados)
+        if actual not in estados and actual != "Todos":
+            self.cmb_estado.set("Todos")
+        self._filtrar()
+
+    def _fallo_recarga(self, error):
+        self.btn_actualizar.configure(state="normal")
+        self.btn_cancelar.configure(state="disabled")
+        self.lbl_total.configure(text="No se pudieron cargar las solicitudes")
+        messagebox.showerror("Error de base de datos", str(error))
+
+    def _filtrar(self, _texto=None):
+        estado = self.cmb_estado.get()
+        texto = normalizar_busqueda(self.ent_busqueda.get())
+        filas = [
+            fila for fila in self.solicitudes
+            if (estado == "Todos" or fila.get("estado") == estado)
+            and (not texto or texto in normalizar_busqueda(" ".join(
+                str(valor) for valor in fila.values())))
+        ]
+        self.tabla.cargar(filas)
+        self.lbl_total.configure(
+            text=f"{len(filas)} de {len(self.solicitudes)} solicitud(es)")
+        self.btn_cancelar.configure(state="disabled")
+
+    def _actualizar_accion(self, _evento=None):
+        fila = self.tabla.seleccionada()
+        habilitado = fila is not None and str(fila.get("estado", "")).casefold() == "creada"
+        self.btn_cancelar.configure(state="normal" if habilitado else "disabled")
 
     def _cancelar(self):
         fila = self.tabla.seleccionada()
@@ -84,17 +150,31 @@ class PanelMisSolicitudes(PanelBase):
             messagebox.showinfo("Selecciona una solicitud", "Elige una solicitud de la tabla.")
             return
         numero = fila["numeroSolicitud"]
+        if str(fila.get("estado", "")).casefold() != "creada":
+            messagebox.showinfo(
+                "No se puede cancelar",
+                "Solo puedes cancelar una solicitud que todavía está Creada.")
+            return
         if not messagebox.askyesno("Cancelar solicitud", f"¿Cancelar la solicitud {numero}?"):
             return
-        try:
-            afectadas = op.cancelar_solicitud(numero, self.ventana.sesion["identificacion"])
-        except ErrorBD as e:  # aquí aparecen los mensajes del trigger
-            messagebox.showerror("No se pudo cancelar", str(e))
-            return
+        self.btn_cancelar.configure(state="disabled")
+        self.lbl_total.configure(text=f"Cancelando solicitud {numero}…")
+        ejecutar_en_segundo_plano(
+            self,
+            lambda: op.cancelar_solicitud(
+                numero, self.ventana.sesion["identificacion"]),
+            lambda afectadas: self._cancelacion_completada(numero, afectadas),
+            self._cancelacion_fallida)
+
+    def _cancelacion_completada(self, numero, afectadas):
         if afectadas == 0:
             messagebox.showinfo("Sin cambios", "La solicitud ya estaba cancelada.")
         else:
             messagebox.showinfo("Listo", f"La solicitud {numero} fue cancelada.")
+        self._recargar()
+
+    def _cancelacion_fallida(self, error):
+        messagebox.showerror("No se pudo cancelar", str(error))
         self._recargar()
 
 
@@ -424,9 +504,44 @@ class PanelMisIncidentes(PanelBase):
     ]
 
     def construir(self):
+        barra = ttk.Frame(self.contenido, style="Contenido.TFrame")
+        barra.pack(fill="x", pady=(0, 10))
+        self.btn_actualizar = boton_estilizado(
+            barra, "Actualizar", self._recargar, primario=False)
+        self.btn_actualizar.pack(side="left")
+        self.lbl_total = ttk.Label(barra, text="", style="Subtitulo.TLabel")
+        self.lbl_total.pack(side="right")
+        self.ent_busqueda = entrada_busqueda(barra, self._buscar, ancho=250)
+        self.ent_busqueda.pack(side="right", padx=10)
         tabla = TablaDatos(self.contenido, self.COLUMNAS)
+        self.tabla = tabla
         tabla.pack(fill="both", expand=True)
-        try:
-            tabla.cargar(op.listar_incidentes(self.ventana.sesion["identificacion"]))
-        except ErrorBD as e:
-            messagebox.showerror("Error de base de datos", str(e))
+        self.incidentes = []
+        self._recargar()
+
+    def _recargar(self):
+        self.btn_actualizar.configure(state="disabled")
+        self.lbl_total.configure(text="Actualizando…")
+        ejecutar_en_segundo_plano(
+            self,
+            lambda: op.listar_incidentes(self.ventana.sesion["identificacion"]),
+            self._cargar_incidentes, self._fallo_recarga)
+
+    def _cargar_incidentes(self, filas):
+        self.btn_actualizar.configure(state="normal")
+        self.incidentes = filas
+        self._buscar(self.ent_busqueda.get())
+
+    def _fallo_recarga(self, error):
+        self.btn_actualizar.configure(state="normal")
+        self.lbl_total.configure(text="No se pudieron cargar los incidentes")
+        messagebox.showerror("Error de base de datos", str(error))
+
+    def _buscar(self, texto):
+        consulta = normalizar_busqueda(texto)
+        filas = [fila for fila in self.incidentes if not consulta or consulta in
+                 normalizar_busqueda(" ".join(
+                     str(valor) for valor in fila.values()))]
+        self.tabla.cargar(filas)
+        self.lbl_total.configure(
+            text=f"{len(filas)} de {len(self.incidentes)} incidente(s)")

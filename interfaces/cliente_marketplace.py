@@ -8,7 +8,8 @@ from tkinter import ttk, messagebox
 from urllib.request import urlopen
 
 from database.conexion import ErrorBD
-from interfaces.componentes import limitar_campo, mostrar_error
+from interfaces.componentes import (
+    limitar_campo, mostrar_error, ejecutar_en_segundo_plano)
 from interfaces.estilos import COLORES
 from interfaces.panel_base import PanelBase
 from interfaces.validaciones import MAX_TEXTO_SQL
@@ -37,29 +38,41 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
     DESCRIPCION = "Completa los pasos para registrar tu solicitud."
 
     def construir(self):
-        try:
-            self.metodos = {
-                fila["nombreMetodoPago"]: fila["idMetodoPago"]
-                for fila in op.listar_metodos_pago()
+        self.lbl_cargando = ctk.CTkLabel(
+            self.contenido, text="Cargando establecimientos y opciones…",
+            text_color=COLORES["texto_suave"], font=("Segoe UI", 12))
+        self.lbl_cargando.pack(anchor="w", padx=12, pady=12)
+        ejecutar_en_segundo_plano(
+            self, self._cargar_opciones, self._iniciar_asistente,
+            self._fallo_carga)
+
+    @staticmethod
+    def _cargar_opciones():
+        metodos = {
+            fila["nombreMetodoPago"]: fila["idMetodoPago"]
+            for fila in op.listar_metodos_pago()
+        }
+        tipos = {
+            fila["nombreTipoRecogida"]: fila["idTipoRecogida"]
+            for fila in op.listar_tipos_recogida()
+        }
+        establecimientos = {
+            fila["nombre"]: {
+                "codigo": fila["codigoEstablecimiento"],
+                "tipo": fila.get("tipo", "Establecimiento"),
             }
-            self.tipos = {
-                fila["nombreTipoRecogida"]: fila["idTipoRecogida"]
-                for fila in op.listar_tipos_recogida()
-            }
-            self.establecimientos = {
-                fila["nombre"]: {
-                    "codigo": fila["codigoEstablecimiento"],
-                    "tipo": fila.get("tipo", "Establecimiento"),
-                }
-                for fila in op.listar_establecimientos()
-            }
-            self.barrios = {
-                fila["nombreBarrio"]: fila["idBarrio"]
-                for fila in listar_barrios()
-            }
-        except ErrorBD as error:
-            mostrar_error(self.contenido, error)
-            return
+            for fila in op.listar_establecimientos()
+        }
+        barrios = {
+            fila["nombreBarrio"]: fila["idBarrio"]
+            for fila in listar_barrios()
+        }
+        return metodos, tipos, establecimientos, barrios
+
+    def _iniciar_asistente(self, opciones):
+        self.lbl_cargando.destroy()
+        (self.metodos, self.tipos,
+         self.establecimientos, self.barrios) = opciones
 
         self.tipo_actual = None
         self.categoria_actual = None
@@ -75,6 +88,10 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
         self._construir_asistente()
         self._configurar_pasos()
         self._mostrar_paso()
+
+    def _fallo_carga(self, error):
+        self.lbl_cargando.destroy()
+        mostrar_error(self.contenido, error)
 
     def _construir_asistente(self):
         self.marco_asistente = ctk.CTkFrame(
@@ -696,13 +713,17 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
             ]
 
         for fila, (etiqueta, valor) in enumerate(datos_resumen):
+            es_total = etiqueta in {"Total", "Monto"}
             ctk.CTkLabel(
                 marco, text=etiqueta, text_color=COLORES["texto_suave"],
-                font=("Segoe UI", 11)
+                font=("Segoe UI", 12 if es_total else 11,
+                      "bold" if es_total else "normal")
             ).grid(row=fila, column=0, sticky="nw", padx=(0, 22), pady=5)
             ctk.CTkLabel(
-                marco, text=valor, text_color=COLORES["texto"],
-                font=("Segoe UI", 12, "bold"), wraplength=500, justify="left"
+                marco, text=valor,
+                text_color=COLORES["acento"] if es_total else COLORES["texto"],
+                font=("Segoe UI", 16 if es_total else 12, "bold"),
+                wraplength=500, justify="left"
             ).grid(row=fila, column=1, sticky="w", pady=5)
 
         ttk.Separator(marco).grid(
@@ -766,16 +787,25 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
         except ValueError as error:
             messagebox.showwarning("Revisa el formulario", str(error))
             return
-        try:
-            numero = op.crear_solicitud(
-                self.ventana.sesion["identificacion"], datos)
-        except ErrorBD as error:
-            messagebox.showerror("No se pudo crear la solicitud", str(error))
-            return
+        self.btn_continuar.configure(state="disabled", text="Enviando…")
+        self.btn_atras.configure(state="disabled")
+        ejecutar_en_segundo_plano(
+            self,
+            lambda: op.crear_solicitud(
+                self.ventana.sesion["identificacion"], datos),
+            self._solicitud_creada, self._fallo_creacion)
+
+    def _solicitud_creada(self, numero):
         messagebox.showinfo(
             "Solicitud creada",
             f"Tu solicitud quedó registrada con el número {numero}.")
         self.ventana.mostrar_modulo("mis_solicitudes")
+
+    def _fallo_creacion(self, error):
+        self.btn_continuar.configure(
+            state="normal", text="Enviar solicitud", command=self._crear)
+        self.btn_atras.configure(state="normal" if self.indice_paso > 0 else "disabled")
+        messagebox.showerror("No se pudo crear la solicitud", str(error))
 
     def _cargar_imagen(self, etiqueta, url):
         if not url:

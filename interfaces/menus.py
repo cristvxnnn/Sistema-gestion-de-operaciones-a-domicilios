@@ -5,7 +5,9 @@ from interfaces.cliente_marketplace import PanelNuevaSolicitudMarketplace
 from interfaces.domiciliario import (
     PanelDisponibles, PanelMisSolicitudesDom, PanelRegistrarIncidente)
 from interfaces.admin import (
-    PanelDashboard, PanelSolicitudesAdmin, PanelConsultas, PanelBarriosAdmin)
+    PanelDashboard, PanelSolicitudesAdmin, PanelIncidentesAdmin,
+    PanelUsuariosAdmin, PanelEstablecimientosAdmin,
+    PanelConsultas, PanelBarriosAdmin)
 
 TITULOS_ROL = {
     "cliente": "Cliente",
@@ -29,6 +31,9 @@ MENUS = {
     "admin": [
         ("dashboard", "Dashboard", PanelDashboard),
         ("solicitudes", "Solicitudes", PanelSolicitudesAdmin),
+        ("incidentes_admin", "Incidentes", PanelIncidentesAdmin),
+        ("usuarios", "Usuarios", PanelUsuariosAdmin),
+        ("establecimientos", "Establecimientos", PanelEstablecimientosAdmin),
         ("barrios", "Barrios", PanelBarriosAdmin),
         ("consultas", "Consultas", PanelConsultas),
     ],

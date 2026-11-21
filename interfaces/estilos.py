@@ -60,7 +60,10 @@ def aplicar_estilos(root):
     s.configure("Treeview", background=c["tarjeta"], fieldbackground=c["tarjeta"],
                 foreground=c["texto"], rowheight=28, font=(FUENTE, 10))
     s.configure("Treeview.Heading", background=c["acento_claro"],
-                foreground=c["acento"], font=(FUENTE, 10, "bold"))
+                foreground=c["acento"], font=(FUENTE, 10, "bold"),
+                padding=(10, 8), relief="flat")
+    s.map("Treeview", background=[("selected", c["acento_claro"])],
+          foreground=[("selected", c["texto"])])
     s.configure("TEntry", fieldbackground=c["tarjeta"], foreground=c["texto"],
                 padding=(10, 8), borderwidth=1, relief="solid")
     s.configure("TCombobox", fieldbackground=c["tarjeta"],

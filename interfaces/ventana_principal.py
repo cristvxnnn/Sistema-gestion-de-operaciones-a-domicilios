@@ -6,6 +6,7 @@ from interfaces.estilos import aplicar_estilos, COLORES
 from interfaces.inicio import PantallaInicio
 from interfaces.acceso import PantallaAcceso
 from interfaces.menus import MENUS, TITULOS_ROL
+from interfaces.componentes import ejecutar_en_segundo_plano
 
 
 class VentanaPrincipal(ctk.CTk):
@@ -50,12 +51,21 @@ class VentanaPrincipal(ctk.CTk):
             text_color="#16A36A" if conectado else COLORES["texto_suave"])
 
     def _verificar_conexion(self):
-        ok, mensaje = probar_conexion()
+        self.actualizar_estado_conexion("Base de datos: verificando conexión…")
+        ejecutar_en_segundo_plano(
+            self, probar_conexion, self._actualizar_conexion, self._error_conexion)
+
+    def _actualizar_conexion(self, resultado):
+        ok, mensaje = resultado
         if ok:
             self.actualizar_estado_conexion(f"Base de datos: conectado — {mensaje}")
         else:
             self.actualizar_estado_conexion("Base de datos: sin conexión")
             messagebox.showwarning("Sin conexión", mensaje)
+
+    def _error_conexion(self, error):
+        self.actualizar_estado_conexion("Base de datos: sin conexión")
+        messagebox.showwarning("Sin conexión", str(error))
 
     def _reemplazar(self, clase, **kwargs):
         """Destruye lo que se muestra y crea la nueva pantalla"""
@@ -129,14 +139,19 @@ class VentanaPrincipal(ctk.CTk):
             detalle, text=TITULOS_ROL[rol], text_color="#C7D5E8",
             font=("Segoe UI", 10), anchor="w").pack(fill="x")
 
+        navegacion = ctk.CTkScrollableFrame(
+            self.menu, fg_color="transparent", corner_radius=0,
+            scrollbar_button_color="#345174",
+            scrollbar_button_hover_color="#55749A")
+        navegacion.pack(fill="both", expand=True, padx=(4, 0))
         ctk.CTkLabel(
-            self.menu, text="MENÚ PRINCIPAL", text_color="#93A9C5",
+            navegacion, text="MENÚ PRINCIPAL", text_color="#93A9C5",
             font=("Segoe UI", 9, "bold"), anchor="w").pack(
                 fill="x", padx=22, pady=(0, 8))
 
         for clave, texto, _ in MENUS[rol]:
             boton = ctk.CTkButton(
-                self.menu, text=f"  {texto}", anchor="w", height=42,
+                navegacion, text=f"  {texto}", anchor="w", height=42,
                 corner_radius=10, fg_color="transparent",
                 hover_color=COLORES["menu_hover_oscuro"],
                 text_color="#D8E2F0", font=("Segoe UI", 12),
