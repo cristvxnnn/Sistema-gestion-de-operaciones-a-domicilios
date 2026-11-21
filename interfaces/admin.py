@@ -5,7 +5,8 @@ from tkinter import ttk, messagebox
 from database.conexion import ErrorBD
 from interfaces.panel_base import PanelBase
 from interfaces.componentes import (
-    TablaDatos, GraficoBarras, tarjeta_indicador, mostrar_error, limitar_campo)
+    TablaDatos, GraficoBarras, tarjeta_indicador, mostrar_error, limitar_campo,
+    combo_estilizado, boton_estilizado, entrada_estilizada)
 from interfaces.validaciones import MAX_TEXTO_SQL
 from operaciones import admin as op
 
@@ -89,13 +90,13 @@ class PanelSolicitudesAdmin(PanelBase):
         barra = ttk.Frame(self.contenido, style="Contenido.TFrame")
         barra.pack(fill="x", pady=(0, 10))
         ttk.Label(barra, text="Estado:", style="Subtitulo.TLabel").pack(side="left")
-        self.cmb_estado = ttk.Combobox(barra, values=["Todos"] + list(self.estados),
-                                       state="readonly", width=18)
+        self.cmb_estado = combo_estilizado(
+            barra, ["Todos"] + list(self.estados), ancho=190,
+            comando=lambda _valor: self._recargar())
         self.cmb_estado.set("Todos")
         self.cmb_estado.pack(side="left", padx=8)
-        self.cmb_estado.bind("<<ComboboxSelected>>", lambda e: self._recargar())
-        ttk.Button(barra, text="Actualizar", style="Secundario.TButton",
-                   command=self._recargar).pack(side="left")
+        boton_estilizado(barra, "Actualizar", self._recargar,
+                         primario=False).pack(side="left")
         self.lbl_total = ttk.Label(barra, text="", style="Subtitulo.TLabel")
         self.lbl_total.pack(side="right")
 
@@ -145,15 +146,16 @@ class PanelBarriosAdmin(PanelBase):
         ttk.Label(tarjeta, text="Comuna", style="Campo.TLabel").grid(
             row=1, column=1, sticky="w", pady=(10, 0))
 
-        self.ent_nombre = ttk.Entry(tarjeta, width=32)
+        self.ent_nombre = entrada_estilizada(
+            tarjeta, ancho=280, placeholder="Nombre del barrio")
         self.ent_nombre.grid(row=2, column=0, sticky="w", padx=(0, 18), pady=(3, 0))
         limitar_campo(self.ent_nombre, MAX_TEXTO_SQL)
 
-        self.cmb_comuna = ttk.Combobox(
-            tarjeta, values=list(self.comunas), state="readonly", width=32)
+        self.cmb_comuna = combo_estilizado(
+            tarjeta, list(self.comunas), ancho=300)
         self.cmb_comuna.grid(row=2, column=1, sticky="w", pady=(3, 0))
-        ttk.Button(tarjeta, text="Agregar barrio", style="Accion.TButton",
-                   command=self._agregar).grid(row=2, column=2, padx=(18, 0), pady=(3, 0))
+        boton_estilizado(tarjeta, "Agregar barrio", self._agregar).grid(
+            row=2, column=2, padx=(18, 0), pady=(3, 0))
 
         self.tabla = TablaDatos(self.contenido, self.COLUMNAS)
         self.tabla.pack(fill="both", expand=True)
@@ -194,11 +196,12 @@ class PanelConsultas(PanelBase):
 
         barra = ttk.Frame(self.contenido, style="Contenido.TFrame")
         barra.pack(fill="x")
-        self.cmb = ttk.Combobox(barra, values=list(self.por_titulo), state="readonly", width=60)
+        self.cmb = combo_estilizado(
+            barra, list(self.por_titulo), ancho=500,
+            comando=self._seleccionar)
         self.cmb.pack(side="left")
-        self.cmb.bind("<<ComboboxSelected>>", self._seleccionar)
-        ttk.Button(barra, text="Ejecutar", style="Accion.TButton",
-                   command=self._ejecutar).pack(side="left", padx=8)
+        boton_estilizado(barra, "Ejecutar", self._ejecutar).pack(
+            side="left", padx=8)
 
         self.lbl_tecnica = ttk.Label(self.contenido, text="", style="Subtitulo.TLabel")
         self.lbl_tecnica.pack(anchor="w", pady=(8, 4))

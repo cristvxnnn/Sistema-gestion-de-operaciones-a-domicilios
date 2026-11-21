@@ -3,6 +3,7 @@ from decimal import Decimal, InvalidOperation
 from io import BytesIO
 from threading import Thread
 import tkinter as tk
+import customtkinter as ctk
 from tkinter import ttk, messagebox
 from urllib.request import urlopen
 
@@ -76,39 +77,46 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
         self._mostrar_paso()
 
     def _construir_asistente(self):
-        self.marco_asistente = ttk.Frame(
-            self.contenido, style="Tarjeta.TFrame", padding=22)
-        self.marco_asistente.pack(fill="both", expand=True)
+        self.marco_asistente = ctk.CTkFrame(
+            self.contenido, fg_color=COLORES["tarjeta"], corner_radius=18,
+            border_width=1, border_color=COLORES["borde"])
+        self.marco_asistente.pack(fill="both", expand=True, padx=4, pady=4)
 
-        self.marco_progreso = ttk.Frame(
-            self.marco_asistente, style="Tarjeta.TFrame")
-        self.marco_progreso.pack(fill="x", pady=(0, 18))
-        self.indicadores = ttk.Frame(
-            self.marco_progreso, style="Tarjeta.TFrame")
+        self.marco_progreso = ctk.CTkFrame(
+            self.marco_asistente, fg_color="transparent")
+        self.marco_progreso.pack(fill="x", padx=22, pady=(20, 14))
+        self.indicadores = ctk.CTkFrame(
+            self.marco_progreso, fg_color="transparent")
         self.indicadores.pack(fill="x")
 
-        self.lbl_paso = ttk.Label(
-            self.marco_asistente, text="", style="TarjetaTitulo.TLabel")
-        self.lbl_paso.pack(anchor="w")
-        self.lbl_ayuda = ttk.Label(
-            self.marco_asistente, text="", style="TarjetaTexto.TLabel",
-            wraplength=760)
-        self.lbl_ayuda.pack(anchor="w", pady=(3, 14))
+        self.lbl_paso = ctk.CTkLabel(
+            self.marco_asistente, text="", text_color=COLORES["texto"],
+            font=("Segoe UI", 19, "bold"), anchor="w")
+        self.lbl_paso.pack(anchor="w", padx=22)
+        self.lbl_ayuda = ctk.CTkLabel(
+            self.marco_asistente, text="", text_color=COLORES["texto_suave"],
+            font=("Segoe UI", 11), wraplength=760, anchor="w", justify="left")
+        self.lbl_ayuda.pack(anchor="w", padx=22, pady=(3, 12))
 
-        self.contenido_paso = ttk.Frame(
-            self.marco_asistente, style="Tarjeta.TFrame")
-        self.contenido_paso.pack(fill="both", expand=True)
+        self.contenido_paso = ctk.CTkFrame(
+            self.marco_asistente, fg_color="transparent")
+        self.contenido_paso.pack(fill="both", expand=True, padx=14)
 
-        self.marco_navegacion = ttk.Frame(
-            self.marco_asistente, style="Tarjeta.TFrame")
-        self.marco_navegacion.pack(fill="x", pady=(18, 0))
-        self.btn_atras = ttk.Button(
-            self.marco_navegacion, text="← Atrás",
-            style="Secundario.TButton", command=self._paso_anterior)
+        self.marco_navegacion = ctk.CTkFrame(
+            self.marco_asistente, fg_color="transparent")
+        self.marco_navegacion.pack(fill="x", padx=22, pady=(12, 20))
+        self.btn_atras = ctk.CTkButton(
+            self.marco_navegacion, text="← Atrás", width=120, height=38,
+            corner_radius=9, fg_color=COLORES["tarjeta"],
+            hover_color=COLORES["acento_claro"], text_color=COLORES["texto"],
+            border_width=1, border_color=COLORES["borde"],
+            command=self._paso_anterior)
         self.btn_atras.pack(side="left")
-        self.btn_continuar = ttk.Button(
-            self.marco_navegacion, text="Continuar →",
-            style="Accion.TButton", command=self._paso_siguiente)
+        self.btn_continuar = ctk.CTkButton(
+            self.marco_navegacion, text="Continuar →", width=170, height=38,
+            corner_radius=9, fg_color=COLORES["acento"],
+            hover_color="#E66F10", font=("Segoe UI", 11, "bold"),
+            command=self._paso_siguiente)
         self.btn_continuar.pack(side="right")
 
     def _configurar_pasos(self):
@@ -134,12 +142,13 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
         for indice, (_, titulo) in enumerate(self.pasos):
             activo = indice == self.indice_paso
             terminado = indice < self.indice_paso
-            estilo = "MenuActivo.TButton" if activo else "Secundario.TButton"
             texto = f"✓ {titulo}" if terminado else f"{indice + 1}. {titulo}"
-            ttk.Label(
+            ctk.CTkLabel(
                 self.indicadores, text=texto,
-                style="TarjetaTitulo.TLabel" if activo else "TarjetaTexto.TLabel"
-            ).pack(side="left", padx=(0, 22))
+                text_color=COLORES["acento"] if activo else COLORES["texto_suave"],
+                font=("Segoe UI", 10, "bold" if activo or terminado else "normal"),
+                fg_color=COLORES["acento_claro"] if activo else "transparent",
+                corner_radius=8).pack(side="left", padx=(0, 8), ipady=6, ipadx=9)
 
     def _limpiar_contenido_paso(self):
         for hijo in self.contenido_paso.winfo_children():
@@ -180,7 +189,7 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
             text="Selecciona si la solicitud está relacionada con un establecimiento "
                  "o con una dirección externa.")
 
-        marco = ttk.Frame(self.contenido_paso, style="Tarjeta.TFrame")
+        marco = ctk.CTkFrame(self.contenido_paso, fg_color="transparent")
         marco.pack(expand=True, fill="both", padx=8, pady=8)
         marco.columnconfigure(0, weight=1)
         marco.columnconfigure(1, weight=1)
@@ -194,29 +203,37 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
                 if tipo.casefold() == "establecimiento"
                 else "Indica qué se debe recoger y completa la dirección."
             )
-            tarjeta = ttk.Frame(
-                marco, style="Menu.TFrame" if seleccionado else "Tarjeta.TFrame",
-                padding=18)
+            tarjeta = ctk.CTkFrame(
+                marco,
+                fg_color=COLORES["acento_claro"] if seleccionado else COLORES["tarjeta"],
+                corner_radius=16, border_width=1,
+                border_color=COLORES["acento"] if seleccionado else COLORES["borde"])
             tarjeta.grid(
                 row=0, column=indice, padx=10, pady=18,
                 sticky="nsew")
-            ttk.Label(
+            ctk.CTkLabel(
                 tarjeta, text="🏪" if tipo.casefold() == "establecimiento" else "📍",
-                style="TarjetaTitulo.TLabel", font=("Segoe UI", 24, "bold")
-            ).pack(anchor="w")
-            ttk.Label(
-                tarjeta, text=titulo, style="TarjetaTitulo.TLabel"
-            ).pack(anchor="w", pady=(8, 3))
-            ttk.Label(
-                tarjeta, text=descripcion, style="TarjetaTexto.TLabel",
-                wraplength=260, justify="left"
-            ).pack(anchor="w", fill="x", expand=True)
-            ttk.Button(
+                font=("Segoe UI Emoji", 28)).pack(
+                    anchor="w", padx=18, pady=(18, 2))
+            ctk.CTkLabel(
+                tarjeta, text=titulo, text_color=COLORES["texto"],
+                font=("Segoe UI", 16, "bold")).pack(
+                    anchor="w", padx=18, pady=(6, 3))
+            ctk.CTkLabel(
+                tarjeta, text=descripcion, text_color=COLORES["texto_suave"],
+                font=("Segoe UI", 11), wraplength=260, justify="left",
+                anchor="w").pack(anchor="w", fill="x", expand=True, padx=18)
+            ctk.CTkButton(
                 tarjeta,
                 text="Seleccionado" if seleccionado else "Seleccionar",
-                style="MenuActivo.TButton" if seleccionado else "Secundario.TButton",
+                height=36, corner_radius=9,
+                fg_color=COLORES["acento"] if seleccionado else COLORES["tarjeta"],
+                hover_color="#E66F10" if seleccionado else COLORES["acento_claro"],
+                text_color="#FFFFFF" if seleccionado else COLORES["texto"],
+                border_width=1 if not seleccionado else 0,
+                border_color=COLORES["borde"],
                 command=lambda valor=tipo: self._seleccionar_tipo(valor)
-            ).pack(anchor="w", pady=(16, 0))
+            ).pack(anchor="w", padx=18, pady=(16, 18))
 
     def _seleccionar_tipo(self, tipo):
         cambio = self.tipo_actual and self.tipo_actual != tipo
@@ -245,34 +262,40 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
     def _dibujar_categorias(self, interior, _canvas):
         for indice, categoria in enumerate(self._categorias()):
             seleccionado = self.categoria_actual == categoria
-            tarjeta = ttk.Frame(
+            tarjeta = ctk.CTkFrame(
                 interior,
-                style="Menu.TFrame" if seleccionado else "Tarjeta.TFrame",
-                padding=18)
+                fg_color=COLORES["acento_claro"] if seleccionado else COLORES["tarjeta"],
+                corner_radius=14, border_width=1,
+                border_color=COLORES["acento"] if seleccionado else COLORES["borde"])
             tarjeta.grid(
                 row=indice // 3, column=indice % 3,
                 padx=8, pady=8, sticky="nsew")
             interior.columnconfigure(indice % 3, weight=1)
-            ttk.Label(
+            ctk.CTkLabel(
                 tarjeta, text=ICONOS_CATEGORIA.get(categoria, "📦"),
-                style="TarjetaTitulo.TLabel", font=("Segoe UI", 24, "bold")
-            ).pack(anchor="w")
-            ttk.Label(
-                tarjeta, text=categoria, style="TarjetaTitulo.TLabel"
-            ).pack(anchor="w", pady=(8, 3))
+                font=("Segoe UI Emoji", 26)).pack(anchor="w", padx=16, pady=(16, 0))
+            ctk.CTkLabel(
+                tarjeta, text=categoria, text_color=COLORES["texto"],
+                font=("Segoe UI", 13, "bold")).pack(
+                    anchor="w", padx=16, pady=(7, 3))
             cantidad = sum(
                 1 for datos in self.establecimientos.values()
                 if datos.get("tipo") == categoria)
-            ttk.Label(
+            ctk.CTkLabel(
                 tarjeta, text=f"{cantidad} establecimiento(s)",
-                style="TarjetaTexto.TLabel"
-            ).pack(anchor="w")
-            ttk.Button(
+                text_color=COLORES["texto_suave"], font=("Segoe UI", 10)
+            ).pack(anchor="w", padx=16)
+            ctk.CTkButton(
                 tarjeta,
                 text="Seleccionada" if seleccionado else "Elegir categoría",
-                style="MenuActivo.TButton" if seleccionado else "Secundario.TButton",
+                height=34, corner_radius=8,
+                fg_color=COLORES["acento"] if seleccionado else COLORES["tarjeta"],
+                hover_color="#E66F10" if seleccionado else COLORES["acento_claro"],
+                text_color="#FFFFFF" if seleccionado else COLORES["texto"],
+                border_width=1 if not seleccionado else 0,
+                border_color=COLORES["borde"],
                 command=lambda valor=categoria: self._seleccionar_categoria(valor)
-            ).pack(anchor="w", pady=(14, 0))
+            ).pack(anchor="w", padx=16, pady=(12, 16))
             self._registrar_rueda_recursivo(tarjeta, _canvas)
 
     def _seleccionar_categoria(self, categoria):
@@ -304,36 +327,41 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
 
         for indice, (nombre, datos) in enumerate(establecimientos):
             seleccionado = self.establecimiento_actual == nombre
-            tarjeta = ttk.Frame(
+            tarjeta = ctk.CTkFrame(
                 interior,
-                style="Menu.TFrame" if seleccionado else "Tarjeta.TFrame",
-                padding=16)
+                fg_color=COLORES["acento_claro"] if seleccionado else COLORES["tarjeta"],
+                corner_radius=14, border_width=1,
+                border_color=COLORES["acento"] if seleccionado else COLORES["borde"])
             tarjeta.grid(
                 row=indice // 2, column=indice % 2,
                 padx=8, pady=8, sticky="nsew")
             interior.columnconfigure(indice % 2, weight=1)
-            ttk.Label(
-                tarjeta, text=nombre, style="TarjetaTitulo.TLabel",
-                wraplength=280, justify="left"
-            ).pack(anchor="w")
-            ttk.Label(
-                tarjeta, text=datos["tipo"], style="TarjetaTexto.TLabel"
-            ).pack(anchor="w", pady=(4, 0))
+            ctk.CTkLabel(
+                tarjeta, text=nombre, text_color=COLORES["texto"],
+                font=("Segoe UI", 13, "bold"), wraplength=280,
+                justify="left", anchor="w").pack(anchor="w", padx=16, pady=(16, 0))
+            ctk.CTkLabel(
+                tarjeta, text=datos["tipo"], text_color=COLORES["texto_suave"],
+                font=("Segoe UI", 10)).pack(anchor="w", padx=16, pady=(4, 0))
             productos = catalogo_para_establecimiento(nombre)
-            ttk.Label(
+            ctk.CTkLabel(
                 tarjeta,
                 text=(f"{len(productos)} producto(s) disponibles"
                       if productos else "Catálogo sin productos disponibles"),
-                style="TarjetaTexto.TLabel"
-            ).pack(anchor="w", pady=(2, 0))
-            ttk.Button(
+                text_color=COLORES["texto_suave"], font=("Segoe UI", 10)
+            ).pack(anchor="w", padx=16, pady=(2, 0))
+            ctk.CTkButton(
                 tarjeta,
                 text=("Seleccionado" if seleccionado else "Elegir establecimiento")
                 if productos else "Sin productos",
-                style="MenuActivo.TButton" if seleccionado else "Accion.TButton",
+                height=34, corner_radius=8,
+                fg_color=COLORES["acento"] if productos else COLORES["borde"],
+                hover_color="#E66F10" if productos else COLORES["borde"],
+                text_color="#FFFFFF" if productos else COLORES["texto_suave"],
+                font=("Segoe UI", 10, "bold"),
                 command=lambda valor=nombre: self._seleccionar_establecimiento(valor),
                 state="normal" if productos else "disabled",
-            ).pack(anchor="w", pady=(13, 0))
+            ).pack(anchor="w", padx=16, pady=(12, 16))
             self._registrar_rueda_recursivo(tarjeta, _canvas)
 
     def _seleccionar_establecimiento(self, nombre):
@@ -347,19 +375,23 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
             text=f"Selecciona un solo producto de {self.establecimiento_actual}. "
                  "Puedes buscarlo por nombre.")
 
-        barra = ttk.Frame(self.contenido_paso, style="Tarjeta.TFrame")
+        barra = ctk.CTkFrame(
+            self.contenido_paso, fg_color=COLORES["tarjeta"], corner_radius=12)
         barra.pack(fill="x", padx=8, pady=(0, 8))
-        ttk.Label(
-            barra, text="Buscar producto", style="Campo.TLabel"
-        ).pack(side="left", padx=(0, 8))
-        self.ent_busqueda_producto = ttk.Entry(barra, width=34)
-        self.ent_busqueda_producto.pack(side="left", fill="x", expand=True)
+        ctk.CTkLabel(
+            barra, text="Buscar producto", text_color=COLORES["texto"],
+            font=("Segoe UI", 11, "bold")).pack(side="left", padx=(14, 8), pady=10)
+        self.ent_busqueda_producto = ctk.CTkEntry(
+            barra, width=340, height=36, corner_radius=9,
+            border_color=COLORES["borde"], fg_color=COLORES["fondo"],
+            placeholder_text="Nombre del producto")
+        self.ent_busqueda_producto.pack(side="left", fill="x", expand=True, padx=(0, 12), pady=8)
         limitar_campo(self.ent_busqueda_producto, MAX_TEXTO_SQL)
         self.ent_busqueda_producto.bind(
             "<KeyRelease>", lambda _evento: self._actualizar_lista_productos())
 
-        self.marco_lista_productos = ttk.Frame(
-            self.contenido_paso, style="Tarjeta.TFrame")
+        self.marco_lista_productos = ctk.CTkFrame(
+            self.contenido_paso, fg_color="transparent")
         self.marco_lista_productos.pack(fill="both", expand=True)
         self._crear_zona_desplazable(
             self._dibujar_productos, self.marco_lista_productos)
@@ -397,10 +429,11 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
         seleccionado = (
             self.producto_actual is not None
             and self.producto_actual["nombre"] == producto["nombre"])
-        tarjeta = ttk.Frame(
-            padre,
-            style="Menu.TFrame" if seleccionado else "Tarjeta.TFrame",
-            padding=9, width=210, height=230)
+        tarjeta = ctk.CTkFrame(
+            padre, fg_color=COLORES["acento_claro"] if seleccionado else COLORES["tarjeta"],
+            corner_radius=14, border_width=1,
+            border_color=COLORES["acento"] if seleccionado else COLORES["borde"],
+            width=210, height=230)
         tarjeta.grid_propagate(False)
 
         imagen = ttk.Label(
@@ -408,20 +441,22 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
             style="TarjetaTexto.TLabel", anchor="center")
         imagen.pack(fill="both", expand=True)
         self._cargar_imagen(imagen, producto.get("imagen"))
-        ttk.Label(
-            tarjeta, text=producto["nombre"], style="TarjetaTitulo.TLabel",
-            wraplength=190, justify="left"
-        ).pack(anchor="w", pady=(6, 0))
-        ttk.Label(
+        ctk.CTkLabel(
+            tarjeta, text=producto["nombre"], text_color=COLORES["texto"],
+            font=("Segoe UI", 12, "bold"), wraplength=190, justify="left"
+        ).pack(anchor="w", padx=10, pady=(6, 0))
+        ctk.CTkLabel(
             tarjeta, text=f"${producto['precio']:,.0f}",
-            style="TarjetaTitulo.TLabel"
-        ).pack(anchor="w", pady=(3, 0))
-        ttk.Button(
+            text_color=COLORES["texto"], font=("Segoe UI", 12, "bold")
+        ).pack(anchor="w", padx=10, pady=(3, 0))
+        ctk.CTkButton(
             tarjeta,
             text="Producto seleccionado" if seleccionado else "Seleccionar producto",
-            style="MenuActivo.TButton" if seleccionado else "Accion.TButton",
+            height=32, corner_radius=8,
+            fg_color=COLORES["acento"] if seleccionado else COLORES["acento"],
+            hover_color="#E66F10", font=("Segoe UI", 10, "bold"),
             command=lambda item=producto: self._seleccionar_producto(item)
-        ).pack(fill="x", pady=(7, 0))
+        ).pack(fill="x", padx=9, pady=(7, 8))
         self._registrar_rueda_recursivo(tarjeta, canvas)
         return tarjeta
 
@@ -431,12 +466,16 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
 
     def _crear_zona_desplazable(self, dibujar, padre=None):
         padre = padre or self.contenido_paso
-        zona = ttk.Frame(padre, style="Tarjeta.TFrame")
+        zona = ctk.CTkFrame(
+            padre, fg_color=COLORES["tarjeta"], corner_radius=12)
         zona.pack(fill="both", expand=True, padx=8, pady=4)
         canvas = tk.Canvas(
             zona, background=COLORES["tarjeta"], highlightthickness=0)
-        scrollbar = ttk.Scrollbar(
-            zona, orient="vertical", command=canvas.yview)
+        scrollbar = ctk.CTkScrollbar(
+            zona, orientation="vertical", command=canvas.yview,
+            width=12, corner_radius=8, fg_color=COLORES["tarjeta"],
+            button_color=COLORES["borde"],
+            button_hover_color=COLORES["acento"])
         canvas.configure(yscrollcommand=scrollbar.set)
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
@@ -494,27 +533,28 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
         self.lbl_ayuda.configure(
             text="Describe qué se debe recoger, indica el monto y completa la dirección.")
 
-        marco = ttk.Frame(self.contenido_paso, style="Tarjeta.TFrame", padding=8)
+        marco = ctk.CTkFrame(
+            self.contenido_paso, fg_color=COLORES["tarjeta"], corner_radius=14)
         marco.pack(fill="x", padx=8, pady=8)
         marco.columnconfigure(0, weight=1)
         marco.columnconfigure(1, weight=1)
 
-        self.ent_desc_externa = ttk.Entry(marco)
-        self.ent_monto_externa = ttk.Entry(marco)
-        self.ent_via = ttk.Entry(marco)
-        self.ent_num = ttk.Entry(marco)
-        self.cmb_barrio = ttk.Combobox(
-            marco, values=list(self.barrios), state="readonly")
+        self.ent_desc_externa = self._entrada_estilizada(marco, "Ej. Recoger un paquete")
+        self.ent_monto_externa = self._entrada_estilizada(marco, "Ej. 25000")
+        self.ent_via = self._entrada_estilizada(marco, "Ej. Calle 5")
+        self.ent_num = self._entrada_estilizada(marco, "Ej. 12-34")
+        self.cmb_barrio = self._combo_estilizado(marco, list(self.barrios))
 
         self._campo(marco, "Descripción", self.ent_desc_externa, 0, 0)
         self._campo(marco, "Monto total ($)", self.ent_monto_externa, 0, 1)
         self._campo(marco, "Vía principal", self.ent_via, 2, 0)
         self._campo(marco, "Número", self.ent_num, 2, 1)
         self._campo(marco, "Barrio", self.cmb_barrio, 4, 0)
-        ttk.Label(
+        ctk.CTkLabel(
             marco,
             text="Si tu barrio no aparece, todavía no tenemos cobertura allí.",
-            style="TarjetaTexto.TLabel", wraplength=330
+            text_color=COLORES["texto_suave"], font=("Segoe UI", 10),
+            wraplength=500, anchor="w"
         ).grid(row=6, column=0, columnspan=2, sticky="w", pady=(3, 0))
 
         limitar_campo(self.ent_desc_externa, MAX_TEXTO_SQL)
@@ -529,8 +569,9 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
             self.cmb_barrio.set(self.datos_externos["barrio"])
 
     def _campo(self, padre, titulo, widget, fila, columna):
-        ttk.Label(
-            padre, text=titulo, style="Campo.TLabel"
+        ctk.CTkLabel(
+            padre, text=titulo, text_color=COLORES["texto"],
+            font=("Segoe UI", 11, "bold")
         ).grid(row=fila, column=columna, sticky="w", padx=8, pady=(8, 2))
         widget.grid(
             row=fila + 1, column=columna, sticky="ew",
@@ -557,6 +598,23 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
         if not self.cmb_barrio.get():
             raise ValueError("Selecciona el barrio de recogida.")
         return descripcion, monto
+
+    @staticmethod
+    def _entrada_estilizada(padre, placeholder):
+        return ctk.CTkEntry(
+            padre, height=38, corner_radius=9, border_width=1,
+            border_color=COLORES["borde"], fg_color=COLORES["fondo"],
+            placeholder_text=placeholder)
+
+    @staticmethod
+    def _combo_estilizado(padre, valores):
+        return ctk.CTkComboBox(
+            padre, values=valores, state="readonly", height=38,
+            corner_radius=9, border_width=1, border_color=COLORES["borde"],
+            fg_color=COLORES["fondo"], button_color=COLORES["acento"],
+            button_hover_color="#E66F10", dropdown_fg_color=COLORES["tarjeta"],
+            dropdown_hover_color=COLORES["acento_claro"],
+            text_color=COLORES["texto"])
 
     def _paso_siguiente(self):
         clave = self.pasos[self.indice_paso][0]
@@ -609,7 +667,9 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
         self.lbl_ayuda.configure(
             text="Verifica la información antes de enviarla.")
 
-        marco = ttk.Frame(self.contenido_paso, style="Tarjeta.TFrame", padding=16)
+        marco = ctk.CTkFrame(
+            self.contenido_paso, fg_color=COLORES["tarjeta"], corner_radius=14,
+            border_width=1, border_color=COLORES["borde"])
         marco.pack(fill="x", padx=8, pady=8)
         marco.columnconfigure(1, weight=1)
 
@@ -636,23 +696,24 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
             ]
 
         for fila, (etiqueta, valor) in enumerate(datos_resumen):
-            ttk.Label(
-                marco, text=etiqueta, style="Campo.TLabel"
+            ctk.CTkLabel(
+                marco, text=etiqueta, text_color=COLORES["texto_suave"],
+                font=("Segoe UI", 11)
             ).grid(row=fila, column=0, sticky="nw", padx=(0, 22), pady=5)
-            ttk.Label(
-                marco, text=valor, style="TarjetaTitulo.TLabel",
-                wraplength=500, justify="left"
+            ctk.CTkLabel(
+                marco, text=valor, text_color=COLORES["texto"],
+                font=("Segoe UI", 12, "bold"), wraplength=500, justify="left"
             ).grid(row=fila, column=1, sticky="w", pady=5)
 
         ttk.Separator(marco).grid(
             row=len(datos_resumen), column=0, columnspan=2,
             sticky="ew", pady=(12, 10))
-        ttk.Label(
-            marco, text="Método de pago", style="Campo.TLabel"
+        ctk.CTkLabel(
+            marco, text="Método de pago", text_color=COLORES["texto"],
+            font=("Segoe UI", 11, "bold")
         ).grid(row=len(datos_resumen) + 1, column=0,
                sticky="w", padx=(0, 22), pady=5)
-        self.cmb_metodo = ttk.Combobox(
-            marco, values=list(self.metodos), state="readonly", width=30)
+        self.cmb_metodo = self._combo_estilizado(marco, list(self.metodos))
         self.cmb_metodo.grid(
             row=len(datos_resumen) + 1, column=1, sticky="w", pady=5)
         if self.metodo_pago_actual in self.metodos:
@@ -661,7 +722,7 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
             self.cmb_metodo.set("Efectivo")
             self.metodo_pago_actual = "Efectivo"
         elif self.metodos:
-            self.cmb_metodo.current(0)
+            self.cmb_metodo.set(next(iter(self.metodos)))
             self.metodo_pago_actual = self.cmb_metodo.get()
 
     def _leer(self):

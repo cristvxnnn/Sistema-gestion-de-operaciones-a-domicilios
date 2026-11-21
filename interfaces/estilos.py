@@ -61,6 +61,16 @@ def aplicar_estilos(root):
                 foreground=c["texto"], rowheight=28, font=(FUENTE, 10))
     s.configure("Treeview.Heading", background=c["acento_claro"],
                 foreground=c["acento"], font=(FUENTE, 10, "bold"))
+    s.configure("TEntry", fieldbackground=c["tarjeta"], foreground=c["texto"],
+                padding=(10, 8), borderwidth=1, relief="solid")
+    s.configure("TCombobox", fieldbackground=c["tarjeta"],
+                foreground=c["texto"], background=c["tarjeta"],
+                arrowcolor=c["acento"], padding=(9, 7), borderwidth=1,
+                relief="solid")
+    s.map("TCombobox", fieldbackground=[("readonly", c["tarjeta"])],
+          foreground=[("readonly", c["texto"])],
+          selectbackground=[("readonly", c["tarjeta"])],
+          selectforeground=[("readonly", c["texto"])])
     s.configure("Campo.TLabel", background=c["tarjeta"], foreground=c["texto"],
                 font=(FUENTE, 10))
     s.configure("Secundario.TButton", background=c["tarjeta"], foreground=c["acento"],

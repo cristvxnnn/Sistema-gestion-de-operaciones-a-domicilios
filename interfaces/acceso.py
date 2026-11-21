@@ -1,6 +1,8 @@
-from tkinter import ttk, messagebox
+import customtkinter as ctk
+from tkinter import messagebox
 
 from database.conexion import ErrorBD
+from interfaces.estilos import COLORES
 from interfaces.componentes import limitar_campo
 from interfaces.validaciones import (
     MAX_BIGINT, MAX_IDENTIFICACION, MAX_TEXTO_SQL, motivo_correo_invalido,
@@ -32,40 +34,76 @@ CAMPOS_DOMICILIARIO = [
     ("idMedioTransporte", "Medio de transporte", "combo", True),
 ]
 
-class PantallaAcceso(ttk.Frame):
+class PantallaAcceso(ctk.CTkFrame):
     def __init__(self, parent, ventana=None, rol="cliente"):
-        super().__init__(parent, style="Contenido.TFrame", padding=28)
+        super().__init__(parent, fg_color=COLORES["fondo"], corner_radius=0)
         self.ventana = ventana
         self.rol = rol
         self.campos = CAMPOS_CLIENTE if rol == "cliente" else CAMPOS_DOMICILIARIO
         self.widgets = {}   #clave Entry / Combobox
         self.opciones = {}  # clave  {texto mostrado: id}
 
-        ttk.Button(self, text="← Volver", style="Secundario.TButton",
-                   command=ventana.mostrar_inicio).pack(anchor="w")
-        nombre_rol = "clientes" if rol == "cliente" else "domiciliarios"
-        ttk.Label(self, text=f"Acceso de {nombre_rol}",
-                  style="Titulo.TLabel").pack(anchor="w", pady=(14, 0))
-        ttk.Label(self, text="Ingresa con tu identificación o regístrate por primera vez.",
-                  style="Subtitulo.TLabel").pack(anchor="w", pady=(2, 14))
+        encabezado = ctk.CTkFrame(self, fg_color="transparent")
+        encabezado.pack(fill="x", padx=30, pady=(22, 10))
+        ctk.CTkButton(
+            encabezado, text="←  Volver", width=110, height=36,
+            corner_radius=10, fg_color=COLORES["tarjeta"],
+            hover_color=COLORES["acento_claro"], text_color=COLORES["texto"],
+            border_width=1, border_color=COLORES["borde"],
+            command=ventana.mostrar_inicio).pack(anchor="w")
+        nombre_rol = "cliente" if rol == "cliente" else "domiciliario"
+        ctk.CTkLabel(
+            encabezado, text=f"Acceso de {nombre_rol}",
+            text_color=COLORES["texto"],
+            font=("Segoe UI", 25, "bold")).pack(anchor="w", pady=(14, 2))
+        ctk.CTkLabel(
+            encabezado, text="Ingresa con tu identificación o crea una cuenta.",
+            text_color=COLORES["texto_suave"],
+            font=("Segoe UI", 12)).pack(anchor="w")
 
-        cuaderno = ttk.Notebook(self)
-        cuaderno.pack(fill="both", expand=True)
-        self._pestana_ingreso(cuaderno)
-        self._pestana_registro(cuaderno)
+        self.cuaderno = ctk.CTkTabview(
+            self, height=570, corner_radius=16, border_width=1,
+            border_color=COLORES["borde"], fg_color=COLORES["tarjeta"],
+            segmented_button_fg_color="#EDF1F6",
+            segmented_button_selected_color=COLORES["acento"],
+            segmented_button_selected_hover_color="#E66F10",
+            segmented_button_unselected_color="#EDF1F6",
+            segmented_button_unselected_hover_color=COLORES["acento_claro"],
+            text_color=COLORES["texto"])
+        self.cuaderno.pack(fill="both", expand=True, padx=30, pady=(8, 24))
+        self.cuaderno.add("Ingresar")
+        self.cuaderno.add("Registrarme")
+        self._pestana_ingreso(self.cuaderno.tab("Ingresar"))
+        self._pestana_registro(self.cuaderno.tab("Registrarme"))
 
-    def _pestana_ingreso(self, cuaderno):
-        marco = ttk.Frame(cuaderno, style="Tarjeta.TFrame", padding=24)
-        cuaderno.add(marco, text="Ingresar")
-        formulario = ttk.Frame(marco, style="Tarjeta.TFrame")
-        formulario.place(relx=0.5, rely=0.5, anchor="center")
-        ttk.Label(formulario, text="Número de identificación", style="Campo.TLabel").pack()
-        self.ent_ingreso = ttk.Entry(formulario, width=30)
-        self.ent_ingreso.pack(pady=(4, 14))
+    def _pestana_ingreso(self, marco):
+        formulario = ctk.CTkFrame(
+            marco, fg_color=COLORES["fondo"], corner_radius=16)
+        formulario.place(relx=0.5, rely=0.48, anchor="center")
+        ctk.CTkLabel(
+            formulario, text="Qué gusto verte", text_color=COLORES["texto"],
+            font=("Segoe UI", 20, "bold")).pack(anchor="w", padx=28, pady=(24, 4))
+        ctk.CTkLabel(
+            formulario, text="Escribe tu identificación para continuar.",
+            text_color=COLORES["texto_suave"], font=("Segoe UI", 11)).pack(
+                anchor="w", padx=28, pady=(0, 16))
+        ctk.CTkLabel(
+            formulario, text="Número de identificación",
+            text_color=COLORES["texto"], font=("Segoe UI", 11, "bold")).pack(
+                anchor="w", padx=28)
+        self.ent_ingreso = ctk.CTkEntry(
+            formulario, width=340, height=42, corner_radius=10,
+            border_width=1, border_color=COLORES["borde"],
+            fg_color=COLORES["tarjeta"],
+            placeholder_text="Ingresa tu número")
+        self.ent_ingreso.pack(padx=28, pady=(6, 16))
         limitar_campo(self.ent_ingreso, MAX_IDENTIFICACION, solo_numeros=True)
         self.ent_ingreso.bind("<Return>", lambda e: self._ingresar())
-        ttk.Button(formulario, text="Ingresar", style="Accion.TButton",
-                   command=self._ingresar).pack()
+        ctk.CTkButton(
+            formulario, text="Ingresar  →", width=340, height=42,
+            corner_radius=10, fg_color=COLORES["acento"],
+            hover_color="#E66F10", font=("Segoe UI", 12, "bold"),
+            command=self._ingresar).pack(padx=28, pady=(0, 26))
 
     def _ingresar(self):
         texto = self.ent_ingreso.get().strip()
@@ -87,41 +125,62 @@ class PantallaAcceso(ttk.Frame):
             return
         self.ventana.iniciar_sesion(self.rol, usuario["identificacion"], usuario["nombre"])
 
-    def _pestana_registro(self, cuaderno):
-        marco = ttk.Frame(cuaderno, style="Tarjeta.TFrame", padding=24)
-        cuaderno.add(marco, text="Registrarme")
-        formulario = ttk.Frame(marco, style="Tarjeta.TFrame")
-        formulario.place(relx=0.5, rely=0.5, anchor="center")
+    def _pestana_registro(self, marco):
         self._cargar_opciones()
-
+        formulario = ctk.CTkScrollableFrame(
+            marco, fg_color=COLORES["fondo"], corner_radius=14)
+        formulario.pack(fill="both", expand=True, padx=12, pady=12)
+        formulario.grid_columnconfigure((0, 1), weight=1)
         for i, (clave, etiqueta, tipo, _) in enumerate(self.campos):
-            fila, col = i // 2, (i % 2) * 2
-            ttk.Label(formulario, text=etiqueta, style="Campo.TLabel").grid(
-                row=fila * 2, column=col, sticky="w", padx=(0, 24), pady=(6, 0))
+            fila, col = i // 2, i % 2
+            bloque = ctk.CTkFrame(formulario, fg_color="transparent")
+            bloque.grid(row=fila, column=col, sticky="ew", padx=18, pady=8)
+            bloque.grid_columnconfigure(0, weight=1)
+            ctk.CTkLabel(
+                bloque, text=etiqueta, text_color=COLORES["texto"],
+                font=("Segoe UI", 11, "bold"), anchor="w").grid(
+                    row=0, column=0, sticky="w", pady=(0, 5))
             if tipo == "combo":
-                widget = ttk.Combobox(formulario, values=list(self.opciones.get(clave, {})),
-                                      state="readonly", width=27)
+                widget = ctk.CTkComboBox(
+                    bloque, values=list(self.opciones.get(clave, {})),
+                    state="readonly", height=40, corner_radius=10,
+                    border_width=1, border_color=COLORES["borde"],
+                    fg_color=COLORES["tarjeta"],
+                    button_color=COLORES["acento"],
+                    button_hover_color="#E66F10",
+                    dropdown_fg_color=COLORES["tarjeta"],
+                    dropdown_hover_color=COLORES["acento_claro"],
+                    text_color=COLORES["texto"])
             else:
-                widget = ttk.Entry(formulario, width=30)
+                widget = ctk.CTkEntry(
+                    bloque, height=40, corner_radius=10, border_width=1,
+                    border_color=COLORES["borde"], fg_color=COLORES["tarjeta"],
+                    placeholder_text="Opcional" if "opcional" in etiqueta else "Escribe aquí")
                 if clave == "identificacion":
                     limitar_campo(widget, MAX_IDENTIFICACION, solo_numeros=True)
                 elif clave == "telefono":
                     limitar_campo(widget, MAX_BIGINT, solo_numeros=True)
                 else:
                     limitar_campo(widget, MAX_TEXTO_SQL)
-            widget.grid(row=fila * 2 + 1, column=col, sticky="w", padx=(0, 24), pady=(2, 6))
+            widget.grid(row=1, column=0, sticky="ew")
             self.widgets[clave] = widget
 
         filas = (len(self.campos) + 1) // 2
         if self.rol == "cliente":
-            ttk.Label(
+            ctk.CTkLabel(
                 formulario,
                 text="Si tu barrio no aparece, todavía no tenemos cobertura allí.",
-                style="TarjetaTexto.TLabel").grid(
-                    row=filas * 2, column=0, columnspan=4, sticky="w", pady=(0, 2))
-        ttk.Button(formulario, text="Registrarme", style="Accion.TButton",
-                   command=self._registrar).grid(row=filas * 2 + 1, column=0,
-                                                  columnspan=4, pady=(18, 0))
+                text_color=COLORES["texto_suave"],
+                font=("Segoe UI", 10)).grid(
+                    row=filas, column=0, columnspan=2,
+                    sticky="w", padx=18, pady=(5, 0))
+        ctk.CTkButton(
+            formulario, text="Crear cuenta", height=42, corner_radius=10,
+            fg_color=COLORES["acento"], hover_color="#E66F10",
+            font=("Segoe UI", 12, "bold"),
+            command=self._registrar).grid(
+                row=filas + 1, column=0, columnspan=2,
+                padx=18, pady=(16, 20), sticky="ew")
 
     def _cargar_opciones(self):
         try:

@@ -2,6 +2,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 import tkinter as tk
 from tkinter import ttk
+import customtkinter as ctk
 
 from interfaces.estilos import COLORES
 from interfaces.validaciones import limitar_entry
@@ -35,7 +36,12 @@ class TablaDatos(ttk.Frame):
         for clave, titulo, ancho in columnas:
             self.arbol.heading(clave, text=titulo)
             self.arbol.column(clave, width=ancho, anchor="w")
-        barra = ttk.Scrollbar(self, orient="vertical", command=self.arbol.yview)
+        barra = ctk.CTkScrollbar(
+            self, orientation="vertical", command=self.arbol.yview,
+            width=12, corner_radius=8,
+            fg_color=COLORES["fondo"],
+            button_color=COLORES["borde"],
+            button_hover_color=COLORES["acento"])
         self.arbol.configure(yscrollcommand=barra.set)
         self.arbol.pack(side="left", fill="both", expand=True)
         barra.pack(side="right", fill="y")
@@ -72,6 +78,39 @@ def mostrar_error(parent, error):
 def limitar_campo(entry, maximo=50, solo_numeros=False):
     """Aplica a un Entry el límite definido para su columna."""
     return limitar_entry(entry, maximo=maximo, solo_numeros=solo_numeros)
+
+
+def combo_estilizado(parent, valores, ancho=240, comando=None):
+    """Combobox redondeado con la paleta común de la aplicación."""
+    return ctk.CTkComboBox(
+        parent, values=valores, width=ancho, height=38, corner_radius=9,
+        border_width=1, border_color=COLORES["borde"],
+        fg_color=COLORES["tarjeta"], button_color=COLORES["acento"],
+        button_hover_color="#E66F10", dropdown_fg_color=COLORES["tarjeta"],
+        dropdown_hover_color=COLORES["acento_claro"],
+        dropdown_text_color=COLORES["texto"], text_color=COLORES["texto"],
+        font=("Segoe UI", 11), command=comando, state="readonly")
+
+
+def boton_estilizado(parent, texto, comando, primario=True):
+    """Botón con esquinas suaves y estados hover de la paleta común."""
+    return ctk.CTkButton(
+        parent, text=texto, command=comando, height=36, corner_radius=9,
+        fg_color=COLORES["acento"] if primario else COLORES["tarjeta"],
+        hover_color="#E66F10" if primario else COLORES["acento_claro"],
+        text_color="#FFFFFF" if primario else COLORES["texto"],
+        border_width=0 if primario else 1,
+        border_color=COLORES["borde"],
+        font=("Segoe UI", 10, "bold"))
+
+
+def entrada_estilizada(parent, ancho=280, placeholder=""):
+    """Campo de texto redondeado, compatible con los límites existentes."""
+    return ctk.CTkEntry(
+        parent, width=ancho, height=38, corner_radius=9, border_width=1,
+        border_color=COLORES["borde"], fg_color=COLORES["tarjeta"],
+        text_color=COLORES["texto"], placeholder_text=placeholder,
+        font=("Segoe UI", 11))
 
 
 class GraficoBarras(tk.Canvas):

@@ -1,5 +1,6 @@
 from tkinter import ttk
 from interfaces.panel_base import PanelBase
+from interfaces.componentes import boton_estilizado
 
 ACCESOS=[
     ("usuarios", "Usuarios", "Usuarios y roles del sistema"),
@@ -27,5 +28,6 @@ class PanelPrincipal(PanelBase):
             tarjeta.grid(row=n//columnas, column=n%columnas, padx=8, pady=8, sticky="nsew")
             ttk.Label(tarjeta, text=titulo, style="TarjetaTitulo.TLabel").pack(anchor="w")
             ttk.Label(tarjeta, text=texto, style="TarjetaTexto.TLabel").pack(anchor="w", pady=(4, 12))
-            ttk.Button(tarjeta, text="Ir al módulo", style="Accion.TButton",
-                       command=lambda k=clave: self.navegar(k)).pack(anchor="w")
+            boton_estilizado(
+                tarjeta, "Ir al módulo",
+                lambda k=clave: self.navegar(k)).pack(anchor="w")

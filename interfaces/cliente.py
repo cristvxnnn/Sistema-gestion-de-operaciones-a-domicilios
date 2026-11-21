@@ -8,7 +8,8 @@ from urllib.request import urlopen
 from database.conexion import ErrorBD
 from interfaces.panel_base import PanelBase
 from interfaces.componentes import (
-    TablaDatos, tarjeta_indicador, mostrar_error, limitar_campo)
+    TablaDatos, tarjeta_indicador, mostrar_error, limitar_campo,
+    combo_estilizado, boton_estilizado, entrada_estilizada)
 from interfaces.validaciones import MAX_TEXTO_SQL
 from operaciones import cliente as op
 from operaciones.accesos import listar_barrios
@@ -62,10 +63,10 @@ class PanelMisSolicitudes(PanelBase):
     def construir(self):
         barra = ttk.Frame(self.contenido, style="Contenido.TFrame")
         barra.pack(fill="x", pady=(0, 10))
-        ttk.Button(barra, text="Cancelar solicitud seleccionada", style="Accion.TButton",
-                   command=self._cancelar).pack(side="left")
-        ttk.Button(barra, text="Actualizar", style="Secundario.TButton",
-                   command=self._recargar).pack(side="left", padx=8)
+        boton_estilizado(barra, "Cancelar solicitud seleccionada",
+                         self._cancelar).pack(side="left")
+        boton_estilizado(barra, "Actualizar", self._recargar,
+                         primario=False).pack(side="left", padx=8)
 
         self.tabla = TablaDatos(self.contenido, self.COLUMNAS)
         self.tabla.pack(fill="both", expand=True)
@@ -124,47 +125,50 @@ class PanelNuevaSolicitud(PanelBase):
                 row=fila, column=col, sticky="w", padx=(0, 24), pady=(6, 0))
 
         etiqueta("Descripción", 0)
-        self.ent_desc = ttk.Entry(marco, width=34)
+        self.ent_desc = entrada_estilizada(
+            marco, ancho=270, placeholder="Ej. Mercado semanal")
         self.ent_desc.grid(row=1, column=0, sticky="w", padx=(0, 24), pady=(2, 6))
         limitar_campo(self.ent_desc, MAX_TEXTO_SQL)
 
         etiqueta("Monto total ($)", 0, 1)
-        self.ent_monto = ttk.Entry(marco, width=20)
+        self.ent_monto = entrada_estilizada(
+            marco, ancho=190, placeholder="Monto en pesos")
         self.ent_monto.grid(row=1, column=1, sticky="w", pady=(2, 6))
         limitar_campo(self.ent_monto, 13)
 
         etiqueta("Método de pago", 2)
-        self.cmb_metodo = ttk.Combobox(marco, values=list(metodos), state="readonly", width=31)
+        self.cmb_metodo = combo_estilizado(marco, list(metodos), ancho=270)
         self.cmb_metodo.grid(row=3, column=0, sticky="w", padx=(0, 24), pady=(2, 6))
         etiqueta("Tipo de recogida", 2, 1)
-        self.cmb_tipo = ttk.Combobox(marco, values=list(tipos), state="readonly", width=17)
+        self.cmb_tipo = combo_estilizado(
+            marco, list(tipos), ancho=220, comando=self._cambiar_tipo)
         self.cmb_tipo.grid(row=3, column=1, sticky="w", pady=(2, 6))
-        self.cmb_tipo.bind("<<ComboboxSelected>>", self._cambiar_tipo)
 
         # Zona dinámica: establecimiento con catálogo o dirección externa.
         self.marco_est = ttk.Frame(marco, style="Menu.TFrame")
         etiqueta("Establecimiento", 0, 0, self.marco_est)
-        self.cmb_est = ttk.Combobox(
-            self.marco_est, values=list(estabs), state="readonly", width=31)
+        self.cmb_est = combo_estilizado(
+            self.marco_est, list(estabs), ancho=270,
+            comando=self._cargar_catalogo)
         self.cmb_est.grid(row=1, column=0, sticky="w", pady=(2, 6))
-        self.cmb_est.bind("<<ComboboxSelected>>", self._cargar_catalogo)
 
         self.marco_catalogo = ttk.Frame(self.marco_est, style="Menu.TFrame")
         ttk.Label(self.marco_catalogo, text="Producto", style="Campo.TLabel").grid(
             row=0, column=0, sticky="w", padx=(0, 14))
         ttk.Label(self.marco_catalogo, text="Cantidad", style="Campo.TLabel").grid(
             row=0, column=1, sticky="w")
-        self.cmb_producto = ttk.Combobox(
-            self.marco_catalogo, state="readonly", width=24)
+        self.cmb_producto = combo_estilizado(
+            self.marco_catalogo, [], ancho=220,
+            comando=self._mostrar_producto)
         self.cmb_producto.grid(row=1, column=0, sticky="w", padx=(0, 14), pady=(2, 6))
-        self.cmb_producto.bind("<<ComboboxSelected>>", self._mostrar_producto)
-        self.ent_cantidad = ttk.Entry(self.marco_catalogo, width=10)
+        self.ent_cantidad = entrada_estilizada(
+            self.marco_catalogo, ancho=92, placeholder="1")
         self.ent_cantidad.grid(row=1, column=1, sticky="w", pady=(2, 6))
         limitar_campo(self.ent_cantidad, 2, solo_numeros=True)
         self.ent_cantidad.insert(0, "1")
-        ttk.Button(self.marco_catalogo, text="Agregar", style="Accion.TButton",
-                   command=self._agregar_producto).grid(
-                       row=1, column=2, padx=(12, 0), pady=(2, 6))
+        boton_estilizado(self.marco_catalogo, "Agregar",
+                         self._agregar_producto).grid(
+                             row=1, column=2, padx=(12, 0), pady=(2, 6))
 
         self.lbl_precio = ttk.Label(
             self.marco_catalogo, text="", style="TarjetaTexto.TLabel")
@@ -183,24 +187,26 @@ class PanelNuevaSolicitud(PanelBase):
             self.tabla_carrito.heading(clave, text=titulo)
             self.tabla_carrito.column(clave, width=ancho, anchor="w")
         self.tabla_carrito.grid(row=4, column=0, columnspan=3, sticky="w", pady=(2, 4))
-        ttk.Button(self.marco_catalogo, text="Quitar seleccionado",
-                   style="Secundario.TButton", command=self._quitar_producto).grid(
-                       row=5, column=0, sticky="w", pady=(2, 6))
+        boton_estilizado(self.marco_catalogo, "Quitar seleccionado",
+                         self._quitar_producto, primario=False).grid(
+                             row=5, column=0, sticky="w", pady=(2, 6))
         self.marco_catalogo.grid(row=2, column=0, columnspan=3, sticky="w")
         self.marco_catalogo.grid_remove()
 
         self.marco_ext = ttk.Frame(marco, style="Menu.TFrame")
         etiqueta("Vía principal (ej. Calle 23)", 0, 0, self.marco_ext)
-        self.ent_via = ttk.Entry(self.marco_ext, width=34)
+        self.ent_via = entrada_estilizada(
+            self.marco_ext, ancho=270, placeholder="Ej. Calle 23")
         self.ent_via.grid(row=1, column=0, sticky="w", padx=(0, 24), pady=(2, 6))
         limitar_campo(self.ent_via, MAX_TEXTO_SQL)
         etiqueta("Número (ej. 17-20)", 0, 1, self.marco_ext)
-        self.ent_num = ttk.Entry(self.marco_ext, width=20)
+        self.ent_num = entrada_estilizada(
+            self.marco_ext, ancho=190, placeholder="Ej. 17-20")
         self.ent_num.grid(row=1, column=1, sticky="w", pady=(2, 6))
         limitar_campo(self.ent_num, MAX_TEXTO_SQL)
         etiqueta("Barrio", 2, 0, self.marco_ext)
-        self.cmb_barrio = ttk.Combobox(
-            self.marco_ext, values=list(barrios), state="readonly", width=31)
+        self.cmb_barrio = combo_estilizado(
+            self.marco_ext, list(barrios), ancho=270)
         self.cmb_barrio.grid(row=3, column=0, sticky="w", pady=(2, 0))
         ttk.Label(
             self.marco_ext,
@@ -208,8 +214,8 @@ class PanelNuevaSolicitud(PanelBase):
             style="TarjetaTexto.TLabel").grid(
                 row=4, column=0, columnspan=2, sticky="w", pady=(3, 6))
 
-        ttk.Button(marco, text="Crear solicitud", style="Accion.TButton",
-                   command=self._crear).grid(row=6, column=0, sticky="w", pady=(18, 0))
+        boton_estilizado(marco, "Crear solicitud", self._crear).grid(
+            row=6, column=0, sticky="w", pady=(18, 0))
 
     def _cambiar_tipo(self, _evento=None):
         self.marco_est.grid_remove()
@@ -232,14 +238,14 @@ class PanelNuevaSolicitud(PanelBase):
         if valor:
             entry.insert(0, valor)
         if solo_lectura:
-            entry.configure(state="readonly")
+            entry.configure(state="disabled")
 
     def _configurar_campos_catalogo(self, activo):
         self.ent_desc.configure(state="normal")
         self.ent_monto.configure(state="normal")
         if activo:
-            self.ent_desc.configure(state="readonly")
-            self.ent_monto.configure(state="readonly")
+            self.ent_desc.configure(state="disabled")
+            self.ent_monto.configure(state="disabled")
 
     def _cargar_catalogo(self, _evento=None):
         productos = catalogo_para_establecimiento(self.cmb_est.get())

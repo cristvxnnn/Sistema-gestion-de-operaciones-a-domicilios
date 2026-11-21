@@ -3,7 +3,9 @@ from tkinter import ttk, messagebox
 
 from database.conexion import ErrorBD
 from interfaces.panel_base import PanelBase
-from interfaces.componentes import TablaDatos, mostrar_error, limitar_campo
+from interfaces.componentes import (
+    TablaDatos, mostrar_error, limitar_campo, combo_estilizado,
+    boton_estilizado, entrada_estilizada)
 from interfaces.validaciones import MAX_TEXTO_SQL
 from operaciones import domiciliario as op
 
@@ -23,10 +25,10 @@ class PanelDisponibles(PanelBase):
     def construir(self):
         barra = ttk.Frame(self.contenido, style="Contenido.TFrame")
         barra.pack(fill="x", pady=(0, 10))
-        ttk.Button(barra, text="Tomar solicitud seleccionada", style="Accion.TButton",
-                   command=self._tomar).pack(side="left")
-        ttk.Button(barra, text="Actualizar", style="Secundario.TButton",
-                   command=self._recargar).pack(side="left", padx=8)
+        boton_estilizado(barra, "Tomar solicitud seleccionada",
+                         self._tomar).pack(side="left")
+        boton_estilizado(barra, "Actualizar", self._recargar,
+                         primario=False).pack(side="left", padx=8)
 
         self.tabla = TablaDatos(self.contenido, self.COLUMNAS)
         self.tabla.pack(fill="both", expand=True)
@@ -67,12 +69,14 @@ class PanelMisSolicitudesDom(PanelBase):
     def construir(self):
         barra = ttk.Frame(self.contenido, style="Contenido.TFrame")
         barra.pack(fill="x", pady=(0, 10))
-        ttk.Button(barra, text="Marcar En curso", style="Accion.TButton",
-                   command=lambda: self._cambiar(3, "En curso")).pack(side="left")
-        ttk.Button(barra, text="Marcar Finalizada", style="Accion.TButton",
-                   command=lambda: self._cambiar(4, "Finalizada")).pack(side="left", padx=8)
-        ttk.Button(barra, text="Actualizar", style="Secundario.TButton",
-                   command=self._recargar).pack(side="left")
+        boton_estilizado(
+            barra, "Marcar En curso",
+            lambda: self._cambiar(3, "En curso")).pack(side="left")
+        boton_estilizado(
+            barra, "Marcar Finalizada",
+            lambda: self._cambiar(4, "Finalizada")).pack(side="left", padx=8)
+        boton_estilizado(barra, "Actualizar", self._recargar,
+                         primario=False).pack(side="left")
 
         self.tabla = TablaDatos(self.contenido, self.COLUMNAS)
         self.tabla.pack(fill="both", expand=True)
@@ -132,24 +136,27 @@ class PanelRegistrarIncidente(PanelBase):
         marco.pack(anchor="w")
 
         ttk.Label(marco, text="Solicitud", style="Campo.TLabel").grid(row=0, column=0, sticky="w", pady=(6, 0))
-        self.cmb_solicitud = ttk.Combobox(marco, values=list(self.solicitudes), state="readonly", width=52)
+        self.cmb_solicitud = combo_estilizado(
+            marco, list(self.solicitudes), ancho=470)
         self.cmb_solicitud.grid(row=1, column=0, sticky="w", pady=(2, 6))
 
         ttk.Label(marco, text="Tipo de incidente", style="Campo.TLabel").grid(row=2, column=0, sticky="w", pady=(6, 0))
-        self.cmb_tipo = ttk.Combobox(marco, values=list(self.tipos), state="readonly", width=52)
+        self.cmb_tipo = combo_estilizado(
+            marco, list(self.tipos), ancho=470,
+            comando=self._cambiar_tipo)
         self.cmb_tipo.grid(row=3, column=0, sticky="w", pady=(2, 6))
-        self.cmb_tipo.bind("<<ComboboxSelected>>", self._cambiar_tipo)
 
         self.lbl_desc = ttk.Label(marco, text="Descripción (máx. 50 caracteres)",
                                   style="Campo.TLabel")
         self.lbl_desc.grid(
             row=4, column=0, sticky="w", pady=(6, 0))
-        self.ent_desc = ttk.Entry(marco, width=55)
+        self.ent_desc = entrada_estilizada(
+            marco, ancho=470, placeholder="Describe brevemente el incidente")
         self.ent_desc.grid(row=5, column=0, sticky="w", pady=(2, 6))
         limitar_campo(self.ent_desc, MAX_TEXTO_SQL)
 
-        ttk.Button(marco, text="Registrar incidente", style="Accion.TButton",
-                   command=self._registrar).grid(row=6, column=0, sticky="w", pady=(18, 0))
+        boton_estilizado(marco, "Registrar incidente", self._registrar).grid(
+            row=6, column=0, sticky="w", pady=(18, 0))
 
     def _cambiar_tipo(self, _evento=None):
         if self.cmb_tipo.get().casefold() == "otro":

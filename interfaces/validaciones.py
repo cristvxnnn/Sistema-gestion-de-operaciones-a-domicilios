@@ -17,7 +17,8 @@ def limitar_entry(entry, maximo=MAX_TEXTO_SQL, solo_numeros=False):
             return False
         return True
 
-    comando = entry.register(validar)
+    widget = getattr(entry, "_entry", entry)
+    comando = widget.register(validar)
     entry.configure(validate="key", validatecommand=(comando, "%P"))
     return entry
 
