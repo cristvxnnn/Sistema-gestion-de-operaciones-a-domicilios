@@ -62,7 +62,7 @@ class PantallaAcceso(ctk.CTkFrame):
             font=("Segoe UI", 12)).pack(anchor="w")
 
         self.cuaderno = ctk.CTkTabview(
-            self, height=570, corner_radius=16, border_width=1,
+            self, height=640, corner_radius=16, border_width=1,
             border_color=COLORES["borde"], fg_color=COLORES["tarjeta"],
             segmented_button_fg_color="#EDF1F6",
             segmented_button_selected_color=COLORES["acento"],
@@ -73,12 +73,16 @@ class PantallaAcceso(ctk.CTkFrame):
         self.cuaderno.pack(fill="both", expand=True, padx=30, pady=(8, 24))
         self.cuaderno.add("Ingresar")
         self.cuaderno.add("Registrarme")
+        # CTkTabview no expone el tamaño de las pestañas en su constructor.
+        self.cuaderno._segmented_button.configure(width=320, height=42)
         self._pestana_ingreso(self.cuaderno.tab("Ingresar"))
         self._pestana_registro(self.cuaderno.tab("Registrarme"))
 
     def _pestana_ingreso(self, marco):
         formulario = ctk.CTkFrame(
-            marco, fg_color=COLORES["fondo"], corner_radius=16)
+            marco, width=500, height=350,
+            fg_color=COLORES["fondo"], corner_radius=16)
+        formulario.pack_propagate(False)
         formulario.place(relx=0.5, rely=0.48, anchor="center")
         ctk.CTkLabel(
             formulario, text="Qué gusto verte", text_color=COLORES["texto"],
@@ -92,18 +96,18 @@ class PantallaAcceso(ctk.CTkFrame):
             text_color=COLORES["texto"], font=("Segoe UI", 11, "bold")).pack(
                 anchor="w", padx=28)
         self.ent_ingreso = ctk.CTkEntry(
-            formulario, width=340, height=42, corner_radius=10,
+            formulario, width=400, height=44, corner_radius=10,
             border_width=1, border_color=COLORES["borde"],
             fg_color=COLORES["tarjeta"],
             placeholder_text="Ingresa tu número")
-        self.ent_ingreso.pack(padx=28, pady=(6, 16))
+        self.ent_ingreso.pack(padx=40, pady=(6, 16))
         limitar_campo(self.ent_ingreso, MAX_IDENTIFICACION, solo_numeros=True)
         self.ent_ingreso.bind("<Return>", lambda e: self._ingresar())
         ctk.CTkButton(
-            formulario, text="Ingresar  →", width=340, height=42,
+            formulario, text="Ingresar  →", width=400, height=46,
             corner_radius=10, fg_color=COLORES["acento"],
             hover_color="#E66F10", font=("Segoe UI", 12, "bold"),
-            command=self._ingresar).pack(padx=28, pady=(0, 26))
+            command=self._ingresar).pack(padx=40, pady=(0, 26))
 
     def _ingresar(self):
         texto = self.ent_ingreso.get().strip()

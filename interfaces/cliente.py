@@ -1,4 +1,5 @@
 """Módulos del rol cliente: resumen, mis solicitudes, crear solicitud y mis incidentes."""
+import customtkinter as ctk
 from io import BytesIO
 from decimal import Decimal, InvalidOperation
 from threading import Thread
@@ -497,31 +498,53 @@ class PanelMisIncidentes(PanelBase):
     TITULO = "Mis incidentes"
     DESCRIPCION = "Incidentes asociados a tus solicitudes."
 
-    COLUMNAS = [
-        ("codigoIncidente", "Código", 70), ("numeroSolicitud", "Solicitud", 80),
-        ("tipo", "Tipo", 170), ("descripcion", "Descripción", 280),
-        ("fecha", "Fecha", 90), ("hora", "Hora", 60),
-    ]
-
     def construir(self):
-        barra = ttk.Frame(self.contenido, style="Contenido.TFrame")
-        barra.pack(fill="x", pady=(0, 10))
+        resumen = ctk.CTkFrame(
+            self.contenido, fg_color="#FFFFFF", corner_radius=14,
+            border_width=1, border_color="#E1E7F0")
+        resumen.pack(fill="x", pady=(0, 12))
+        resumen.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            resumen, text="🔔", width=48, height=48, corner_radius=12,
+            fg_color="#FFF0E1", text_color="#F58220",
+            font=("Segoe UI Emoji", 23)).grid(
+                row=0, column=0, rowspan=2, padx=(18, 12), pady=16)
+        ctk.CTkLabel(
+            resumen, text="Incidentes registrados", text_color="#64748B",
+            font=("Segoe UI", 11), anchor="w").grid(
+                row=0, column=1, sticky="sw", pady=(14, 0))
+        self.lbl_total = ctk.CTkLabel(
+            resumen, text="—", text_color="#162544",
+            font=("Segoe UI", 22, "bold"), anchor="w")
+        self.lbl_total.grid(row=1, column=1, sticky="nw", pady=(0, 14))
         self.btn_actualizar = boton_estilizado(
-            barra, "Actualizar", self._recargar, primario=False)
-        self.btn_actualizar.pack(side="left")
-        self.lbl_total = ttk.Label(barra, text="", style="Subtitulo.TLabel")
-        self.lbl_total.pack(side="right")
-        self.ent_busqueda = entrada_busqueda(barra, self._buscar, ancho=250)
-        self.ent_busqueda.pack(side="right", padx=10)
-        tabla = TablaDatos(self.contenido, self.COLUMNAS)
-        self.tabla = tabla
-        tabla.pack(fill="both", expand=True)
+            resumen, "Actualizar", self._recargar, primario=False)
+        self.btn_actualizar.grid(row=0, column=2, rowspan=2, padx=18, pady=16)
+
+        barra = ctk.CTkFrame(
+            self.contenido, fg_color="#FFF8F1", corner_radius=12)
+        barra.pack(fill="x", pady=(0, 10))
+        ctk.CTkLabel(
+            barra, text="Historial", text_color="#162544",
+            font=("Segoe UI", 16, "bold")).pack(side="left", padx=14, pady=8)
+        self.lbl_resultados = ctk.CTkLabel(
+            barra, text="", text_color="#64748B",
+            font=("Segoe UI", 10))
+        self.lbl_resultados.pack(side="right", padx=14)
+        self.ent_busqueda = entrada_busqueda(barra, self._buscar, ancho=260)
+        self.ent_busqueda.pack(side="right", pady=6)
+
+        self.lista_tarjetas = ctk.CTkScrollableFrame(
+            self.contenido, fg_color="#FFF8F1", corner_radius=14)
+        self.lista_tarjetas.pack(fill="both", expand=True)
+        self.lista_tarjetas.grid_columnconfigure(0, weight=1)
         self.incidentes = []
         self._recargar()
 
     def _recargar(self):
         self.btn_actualizar.configure(state="disabled")
-        self.lbl_total.configure(text="Actualizando…")
+        self.lbl_resultados.configure(text="Actualizando…")
         ejecutar_en_segundo_plano(
             self,
             lambda: op.listar_incidentes(self.ventana.sesion["identificacion"]),
@@ -530,11 +553,12 @@ class PanelMisIncidentes(PanelBase):
     def _cargar_incidentes(self, filas):
         self.btn_actualizar.configure(state="normal")
         self.incidentes = filas
+        self.lbl_total.configure(text=str(len(filas)))
         self._buscar(self.ent_busqueda.get())
 
     def _fallo_recarga(self, error):
         self.btn_actualizar.configure(state="normal")
-        self.lbl_total.configure(text="No se pudieron cargar los incidentes")
+        self.lbl_resultados.configure(text="No se pudieron cargar")
         messagebox.showerror("Error de base de datos", str(error))
 
     def _buscar(self, texto):
@@ -542,6 +566,52 @@ class PanelMisIncidentes(PanelBase):
         filas = [fila for fila in self.incidentes if not consulta or consulta in
                  normalizar_busqueda(" ".join(
                      str(valor) for valor in fila.values()))]
-        self.tabla.cargar(filas)
-        self.lbl_total.configure(
+        for tarjeta in self.lista_tarjetas.winfo_children():
+            tarjeta.destroy()
+
+        if not filas:
+            mensaje = ("No hay incidentes asociados a tus solicitudes."
+                       if not self.incidentes else "No hay incidentes que coincidan con la búsqueda.")
+            vacio = ctk.CTkFrame(
+                self.lista_tarjetas, fg_color="#FFFFFF", corner_radius=14,
+                border_width=1, border_color="#E1E7F0")
+            vacio.grid(row=0, column=0, sticky="ew", padx=4, pady=4)
+            ctk.CTkLabel(
+                vacio, text="✓" if not self.incidentes else "⌕",
+                text_color="#16A36A" if not self.incidentes else "#64748B",
+                font=("Segoe UI", 24, "bold")).pack(pady=(22, 6))
+            ctk.CTkLabel(
+                vacio, text=mensaje, text_color="#64748B",
+                font=("Segoe UI", 12)).pack(padx=20, pady=(0, 22))
+
+        for indice, incidente in enumerate(filas):
+            tarjeta = ctk.CTkFrame(
+                self.lista_tarjetas, fg_color="#FFFFFF", corner_radius=14,
+                border_width=1, border_color="#E1E7F0")
+            tarjeta.grid(row=indice, column=0, sticky="ew", padx=4, pady=5)
+            tarjeta.grid_columnconfigure(0, weight=1)
+
+            encabezado = ctk.CTkFrame(tarjeta, fg_color="transparent")
+            encabezado.grid(row=0, column=0, sticky="ew", padx=18, pady=(14, 0))
+            encabezado.grid_columnconfigure(0, weight=1)
+            ctk.CTkLabel(
+                encabezado, text=f"⚠  {incidente['tipo']}",
+                text_color="#162544", font=("Segoe UI", 13, "bold"),
+                anchor="w").grid(row=0, column=0, sticky="w")
+            ctk.CTkLabel(
+                encabezado,
+                text=f"Solicitud #{incidente['numeroSolicitud']}  ·  Incidente #{incidente['codigoIncidente']}",
+                text_color="#F58220", font=("Segoe UI", 10, "bold"),
+                anchor="e").grid(row=0, column=1, sticky="e", padx=(12, 0))
+            ctk.CTkLabel(
+                tarjeta, text=incidente["descripcion"], text_color="#334155",
+                font=("Segoe UI", 11), anchor="w", justify="left",
+                wraplength=900).grid(
+                    row=1, column=0, sticky="ew", padx=18, pady=(8, 4))
+            ctk.CTkLabel(
+                tarjeta, text=f"📅  {incidente['fecha']}    ·    🕒  {incidente['hora']}",
+                text_color="#64748B", font=("Segoe UI", 10),
+                anchor="w").grid(row=2, column=0, sticky="w", padx=18, pady=(0, 14))
+
+        self.lbl_resultados.configure(
             text=f"{len(filas)} de {len(self.incidentes)} incidente(s)")

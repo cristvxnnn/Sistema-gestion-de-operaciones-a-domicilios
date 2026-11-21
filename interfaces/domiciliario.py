@@ -250,26 +250,27 @@ class PanelRegistrarIncidente(PanelBase):
         self.tipos = {f["nombreTipoIncidente"]: f["idTipoIncidente"] for f in tipos}
 
         marco = ttk.Frame(self.contenido, style="Tarjeta.TFrame", padding=24)
-        marco.pack(anchor="w")
+        marco.pack(fill="both", expand=True)
+        marco.grid_columnconfigure(0, weight=1)
 
         ttk.Label(marco, text="Solicitud", style="Campo.TLabel").grid(row=0, column=0, sticky="w", pady=(6, 0))
         self.cmb_solicitud = combo_estilizado(
-            marco, list(self.solicitudes), ancho=470)
-        self.cmb_solicitud.grid(row=1, column=0, sticky="w", pady=(2, 6))
+            marco, list(self.solicitudes), ancho=560)
+        self.cmb_solicitud.grid(row=1, column=0, sticky="ew", pady=(4, 10))
 
         ttk.Label(marco, text="Tipo de incidente", style="Campo.TLabel").grid(row=2, column=0, sticky="w", pady=(6, 0))
         self.cmb_tipo = combo_estilizado(
-            marco, list(self.tipos), ancho=470,
+            marco, list(self.tipos), ancho=560,
             comando=self._cambiar_tipo)
-        self.cmb_tipo.grid(row=3, column=0, sticky="w", pady=(2, 6))
+        self.cmb_tipo.grid(row=3, column=0, sticky="ew", pady=(4, 10))
 
         self.lbl_desc = ttk.Label(marco, text="Descripción (máx. 50 caracteres)",
                                   style="Campo.TLabel")
         self.lbl_desc.grid(
             row=4, column=0, sticky="w", pady=(6, 0))
         self.ent_desc = entrada_estilizada(
-            marco, ancho=470, placeholder="Describe brevemente el incidente")
-        self.ent_desc.grid(row=5, column=0, sticky="w", pady=(2, 6))
+            marco, ancho=560, placeholder="Describe brevemente el incidente")
+        self.ent_desc.grid(row=5, column=0, sticky="ew", pady=(4, 6))
         limitar_campo(self.ent_desc, MAX_TEXTO_SQL)
         self.lbl_contador = ttk.Label(
             marco, text=f"0/{MAX_TEXTO_SQL} caracteres",
@@ -279,7 +280,8 @@ class PanelRegistrarIncidente(PanelBase):
 
         self.btn_registrar = boton_estilizado(
             marco, "Registrar incidente", self._registrar)
-        self.btn_registrar.grid(row=7, column=0, sticky="w", pady=(18, 0))
+        self.btn_registrar.configure(height=44)
+        self.btn_registrar.grid(row=7, column=0, sticky="ew", pady=(20, 0))
 
     def _actualizar_contador(self, _evento=None):
         cantidad = len(self.ent_desc.get())
