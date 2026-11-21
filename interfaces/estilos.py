@@ -3,12 +3,14 @@ from tkinter import ttk
 COLORES={
     "fondo": "#F4F6FA",
     "tarjeta": "#FFFFFF",
-    "borde": "#DDE2EC",
-    "texto": "#1F2937",
-    "texto_suave": "#6B7280",
-    "acento": "#1A56DB",
-    "acento_claro": "#E8F0FE",
-    "menu_hover": "#F1F5F9",
+    "borde": "#E1E7F0",
+    "texto": "#162544",
+    "texto_suave": "#64748B",
+    "acento": "#F58220",
+    "acento_claro": "#FFF0E1",
+    "menu_hover": "#FFF6ED",
+    "menu": "#102448",
+    "menu_hover_oscuro": "#18345F",
 }
 FUENTE = "Segoe UI"
 def aplicar_estilos(root):
@@ -16,14 +18,14 @@ def aplicar_estilos(root):
     c = COLORES
     s = ttk.Style(root)
     s.theme_use("clam")
-    root.configure(background=c["fondo"])
+    root.configure(fg_color=c["fondo"])
 
     s.configure("Contenido.TFrame", background=c["fondo"])
     s.configure("Menu.TFrame", background=c["tarjeta"])
     s.configure("Tarjeta.TFrame", background=c["tarjeta"], relief="solid",
                 borderwidth=1, bordercolor=c["borde"])
 
-    s.configure("Marca.TLabel", background=c["tarjeta"], foreground=c["acento"],
+    s.configure("Marca.TLabel", background=c["tarjeta"], foreground=c["texto"],
                 font=(FUENTE, 15, "bold"))
     s.configure("MarcaSub.TLabel", background=c["tarjeta"],
                 foreground=c["texto_suave"], font=(FUENTE, 9))
@@ -35,7 +37,7 @@ def aplicar_estilos(root):
                 foreground=c["texto"], font=(FUENTE, 12, "bold"))
     s.configure("TarjetaTexto.TLabel", background=c["tarjeta"],
                 foreground=c["texto_suave"], font=(FUENTE, 9))
-    s.configure("Estado.TLabel", background=c["tarjeta"],
+    s.configure("Estado.TLabel", background=c["fondo"],
                 foreground=c["texto_suave"], font=(FUENTE, 9))
 
     # Botones del menú lateral
@@ -43,16 +45,16 @@ def aplicar_estilos(root):
                 font=(FUENTE, 11), anchor="w", padding=(18, 10),
                 borderwidth=0, relief="flat", focuscolor=c["tarjeta"])
     s.map("Menu.TButton", background=[("active", c["menu_hover"])])
-    s.configure("MenuActivo.TButton", background=c["acento_claro"],
-                foreground=c["acento"], font=(FUENTE, 11, "bold"), anchor="w",
+    s.configure("MenuActivo.TButton", background=c["acento"],
+                foreground="#FFFFFF", font=(FUENTE, 11, "bold"), anchor="w",
                 padding=(18, 10), borderwidth=0, relief="flat",
-                focuscolor=c["acento_claro"])
-    s.map("MenuActivo.TButton", background=[("active", c["acento_claro"])])
+                focuscolor=c["acento"])
+    s.map("MenuActivo.TButton", background=[("active", "#E66F10")])
 
     # Botón de acción principal
     s.configure("Accion.TButton", background=c["acento"], foreground="#FFFFFF",
                 font=(FUENTE, 10, "bold"), padding=(14, 6), borderwidth=0)
-    s.map("Accion.TButton", background=[("active", "#1647B8")])
+    s.map("Accion.TButton", background=[("active", "#E66F10")])
 
     # Tablas
     s.configure("Treeview", background=c["tarjeta"], fieldbackground=c["tarjeta"],

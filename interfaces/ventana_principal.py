@@ -1,4 +1,4 @@
-import tkinter as tk
+import customtkinter as ctk
 from tkinter import ttk, messagebox
 
 from database.conexion import probar_conexion
@@ -8,12 +8,14 @@ from interfaces.acceso import PantallaAcceso
 from interfaces.menus import MENUS, TITULOS_ROL
 
 
-class VentanaPrincipal(tk.Tk):
+class VentanaPrincipal(ctk.CTk):
     def __init__(self):
+        ctk.set_appearance_mode("light")
+        ctk.set_default_color_theme("blue")
         super().__init__()
-        self.title("Sistema de gestión de domicilios")
-        self.geometry("1100x680")
-        self.minsize(960, 600)
+        self.title("DOMIYA · Domicilios en Cali")
+        self.geometry("1280x800")
+        self.minsize(1024, 680)
         aplicar_estilos(self)
 
         self.sesion = None          # {"rol", "identificacion", "nombre"} o None
@@ -21,22 +23,31 @@ class VentanaPrincipal(tk.Tk):
         self._botones = {}          # clave de módulo -> botón del menú
 
         self._crear_barra_estado()
-        self.menu = ttk.Frame(self, style="Menu.TFrame", width=240)
-        self.area = ttk.Frame(self, style="Contenido.TFrame")
+        self.menu = ctk.CTkFrame(
+            self, width=236, corner_radius=0, fg_color=COLORES["menu"])
+        self.area = ctk.CTkFrame(
+            self, corner_radius=0, fg_color=COLORES["fondo"])
         self.area.pack(side="left", fill="both", expand=True)
 
         self.mostrar_inicio()
         self.after(150, self._verificar_conexion)
 
     def _crear_barra_estado(self):
-        barra = ttk.Frame(self, style="Menu.TFrame")
+        barra = ctk.CTkFrame(
+            self, height=30, corner_radius=0, fg_color=COLORES["fondo"])
         barra.pack(side="bottom", fill="x")
-        self.lbl_conexion = ttk.Label(barra, text="Base de datos: sin conexión",
-                                      style="Estado.TLabel")
-        self.lbl_conexion.pack(side="left", padx=12, pady=4)
+        barra.pack_propagate(False)
+        self.lbl_conexion = ctk.CTkLabel(
+            barra, text="●  Base de datos: sin conexión",
+            text_color=COLORES["texto_suave"], font=("Segoe UI", 10))
+        self.lbl_conexion.pack(side="left", padx=20, pady=3)
 
     def actualizar_estado_conexion(self, texto):
-        self.lbl_conexion.configure(text=texto)
+        conectado = texto.startswith("Base de datos: conectado")
+        marca = "●" if conectado else "●"
+        self.lbl_conexion.configure(
+            text=f"{marca}  {texto}",
+            text_color="#16A36A" if conectado else COLORES["texto_suave"])
 
     def _verificar_conexion(self):
         ok, mensaje = probar_conexion()
@@ -77,7 +88,12 @@ class VentanaPrincipal(tk.Tk):
         clase = next(c for k, _, c in MENUS[rol] if k == clave)
         self._reemplazar(clase)
         for k, boton in self._botones.items():
-            boton.configure(style="MenuActivo.TButton" if k == clave else "Menu.TButton")
+            activo = k == clave
+            boton.configure(
+                fg_color=COLORES["acento"] if activo else "transparent",
+                hover_color="#E66F10" if activo else COLORES["menu_hover_oscuro"],
+                text_color="#FFFFFF" if activo else "#D8E2F0",
+                font=("Segoe UI", 12, "bold" if activo else "normal"))
 
     def _construir_menu(self):
         for hijo in self.menu.winfo_children():
@@ -85,24 +101,53 @@ class VentanaPrincipal(tk.Tk):
         self._botones = {}
         rol = self.sesion["rol"]
 
-        tk.Frame(self.menu, width=1, background=COLORES["borde"]).pack(side="right", fill="y")
-        ttk.Label(self.menu, text="Domicilios", style="Marca.TLabel").pack(
-            anchor="w", padx=18, pady=(22, 0))
-        ttk.Label(self.menu, text=TITULOS_ROL[rol], style="MarcaSub.TLabel").pack(
-            anchor="w", padx=18)
-        if rol != "admin":
-            ttk.Label(self.menu, text=f"Hola, {self.sesion['nombre']}",
-                      style="TarjetaTitulo.TLabel").pack(anchor="w", padx=18, pady=(10, 0))
-        ttk.Frame(self.menu, style="Menu.TFrame", height=18).pack()
+        self.menu.pack_propagate(False)
+        marca = ctk.CTkFrame(self.menu, fg_color="transparent")
+        marca.pack(fill="x", padx=20, pady=(24, 20))
+        ctk.CTkLabel(
+            marca, text="🛵  DOMIYA", text_color="#FFFFFF",
+            font=("Segoe UI", 21, "bold")).pack(anchor="w")
+        ctk.CTkLabel(
+            marca, text="Domicilios en Cali", text_color="#F8A34E",
+            font=("Segoe UI", 11, "bold")).pack(anchor="w", padx=(38, 0))
+
+        perfil = ctk.CTkFrame(
+            self.menu, fg_color=COLORES["menu_hover_oscuro"], corner_radius=14)
+        perfil.pack(fill="x", padx=14, pady=(0, 22))
+        inicial = (self.sesion["nombre"] or TITULOS_ROL[rol])[0].upper()
+        ctk.CTkLabel(
+            perfil, text=inicial, width=42, height=42, corner_radius=21,
+            fg_color="#F58220", text_color="#FFFFFF",
+            font=("Segoe UI", 18, "bold")).pack(
+                side="left", padx=12, pady=12)
+        detalle = ctk.CTkFrame(perfil, fg_color="transparent")
+        detalle.pack(side="left", fill="x", expand=True, padx=(0, 8))
+        ctk.CTkLabel(
+            detalle, text=self.sesion["nombre"], text_color="#FFFFFF",
+            font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
+        ctk.CTkLabel(
+            detalle, text=TITULOS_ROL[rol], text_color="#C7D5E8",
+            font=("Segoe UI", 10), anchor="w").pack(fill="x")
+
+        ctk.CTkLabel(
+            self.menu, text="MENÚ PRINCIPAL", text_color="#93A9C5",
+            font=("Segoe UI", 9, "bold"), anchor="w").pack(
+                fill="x", padx=22, pady=(0, 8))
 
         for clave, texto, _ in MENUS[rol]:
-            boton = ttk.Button(self.menu, text=texto, style="Menu.TButton",
-                               command=lambda k=clave: self.mostrar_modulo(k))
-            boton.pack(fill="x")
+            boton = ctk.CTkButton(
+                self.menu, text=f"  {texto}", anchor="w", height=42,
+                corner_radius=10, fg_color="transparent",
+                hover_color=COLORES["menu_hover_oscuro"],
+                text_color="#D8E2F0", font=("Segoe UI", 12),
+                command=lambda k=clave: self.mostrar_modulo(k))
+            boton.pack(fill="x", padx=12, pady=3)
             self._botones[clave] = boton
 
-        ttk.Button(self.menu, text="Cerrar sesión", style="Secundario.TButton",
-                   command=self.cerrar_sesion).pack(side="bottom", padx=18, pady=18, anchor="w")
-
-        self.menu.pack_propagate(False)
+        ctk.CTkButton(
+            self.menu, text="↪  Cerrar sesión", anchor="w", height=40,
+            corner_radius=10, fg_color="transparent",
+            hover_color=COLORES["menu_hover_oscuro"], text_color="#D8E2F0",
+            font=("Segoe UI", 11), command=self.cerrar_sesion).pack(
+                side="bottom", fill="x", padx=12, pady=16)
         self.menu.pack(side="left", fill="y", before=self.area)
