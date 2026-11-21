@@ -8,8 +8,8 @@ from interfaces.validaciones import (
     MAX_BIGINT, MAX_IDENTIFICACION, MAX_TEXTO_SQL, motivo_correo_invalido,
     validar_identificacion)
 from operaciones.accesos import (
-    buscar_cliente, buscar_domiciliario, listar_barrios, listar_medios_transporte,
-    registrar_cliente, registrar_domiciliario)
+    buscar_cliente, buscar_domiciliario, buscar_usuario, listar_barrios,
+    listar_medios_transporte, registrar_cliente, registrar_domiciliario)
 
 CAMPOS_CLIENTE = [
     ("identificacion", "Identificación", "entero", True),
@@ -164,23 +164,63 @@ class PantallaAcceso(ctk.CTkFrame):
                     limitar_campo(widget, MAX_TEXTO_SQL)
             widget.grid(row=1, column=0, sticky="ew")
             self.widgets[clave] = widget
+            if clave == "identificacion":
+                widget.bind("<FocusOut>", self._autocompletar_usuario)
+                widget.bind("<Return>", self._autocompletar_usuario)
 
         filas = (len(self.campos) + 1) // 2
+        self.etiqueta_autocompletar = ctk.CTkLabel(
+            formulario, text="", text_color=COLORES["texto_suave"],
+            font=("Segoe UI", 10), anchor="w")
+        self.etiqueta_autocompletar.grid(
+            row=filas, column=0, columnspan=2, sticky="w", padx=18, pady=(5, 0))
+
+        fila_boton = filas + 1
         if self.rol == "cliente":
             ctk.CTkLabel(
                 formulario,
                 text="Si tu barrio no aparece, todavía no tenemos cobertura allí.",
                 text_color=COLORES["texto_suave"],
                 font=("Segoe UI", 10)).grid(
-                    row=filas, column=0, columnspan=2,
+                    row=filas + 1, column=0, columnspan=2,
                     sticky="w", padx=18, pady=(5, 0))
+            fila_boton += 1
         ctk.CTkButton(
             formulario, text="Crear cuenta", height=42, corner_radius=10,
             fg_color=COLORES["acento"], hover_color="#E66F10",
             font=("Segoe UI", 12, "bold"),
             command=self._registrar).grid(
-                row=filas + 1, column=0, columnspan=2,
+                row=fila_boton, column=0, columnspan=2,
                 padx=18, pady=(16, 20), sticky="ew")
+
+    def _autocompletar_usuario(self, _evento=None):
+        identificacion = self.widgets["identificacion"].get().strip()
+        if not identificacion or not identificacion.isdigit():
+            self.etiqueta_autocompletar.configure(text="")
+            return
+        error_identificacion = validar_identificacion(identificacion)
+        if error_identificacion:
+            self.etiqueta_autocompletar.configure(text="")
+            return
+        try:
+            usuario = buscar_usuario(int(identificacion))
+        except ErrorBD as e:
+            self.etiqueta_autocompletar.configure(text="")
+            messagebox.showerror("Error de base de datos", str(e))
+            return
+
+        if usuario is None:
+            self.etiqueta_autocompletar.configure(
+                text="No encontramos esa identificación; completa tus datos personales.")
+            return
+
+        for campo in ("nombre", "apellidoPaterno", "apellidoMaterno", "telefono", "correo"):
+            widget = self.widgets.get(campo)
+            if widget is not None:
+                widget.delete(0, "end")
+                widget.insert(0, str(usuario.get(campo) or ""))
+        self.etiqueta_autocompletar.configure(
+            text="Datos encontrados. Completamos tu información personal.")
 
     def _cargar_opciones(self):
         try:

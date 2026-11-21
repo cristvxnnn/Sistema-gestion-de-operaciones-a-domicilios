@@ -20,6 +20,14 @@ def buscar_domiciliario(identificacion):
     return filas[0] if filas else None
 
 
+def buscar_usuario(identificacion):
+    """Devuelve los datos personales compartidos por los distintos roles."""
+    filas = ejecutar_consulta(
+        "SELECT identificacion, nombre, apellidoPaterno, apellidoMaterno, telefono, correo "
+        "FROM usuario WHERE identificacion = %s", (identificacion,))
+    return filas[0] if filas else None
+
+
 def listar_barrios():
     return ejecutar_consulta("SELECT idBarrio, nombreBarrio FROM barrio ORDER BY nombreBarrio")
 
