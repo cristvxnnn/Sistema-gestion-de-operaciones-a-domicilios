@@ -1,7 +1,7 @@
 """Operaciones de ingreso y registro de clientes y domiciliarios."""
 import mysql.connector
 
-from database.conexion import ErrorBD, ejecutar_consulta, llamar_procedimiento, obtener_conexion
+from database.conexion import ErrorBD, ejecutar_consulta, obtener_conexion
 
 
 def buscar_cliente(identificacion):
@@ -83,14 +83,52 @@ def registrar_cliente(d):
         conexion.close()
 
 
-def siguiente_codigo_domiciliario():
-    fila = ejecutar_consulta(
-        "SELECT IFNULL(MAX(codigoDomiciliario), 100) + 1 AS siguiente FROM domiciliario")[0]
-    return int(fila["siguiente"])
-
-
 def registrar_domiciliario(d):
-    llamar_procedimiento("insertar_domiciliario", (
-        d["identificacion"], d["nombre"], d["apellidoPaterno"], d["apellidoMaterno"],
-        d["telefono"], d["correo"], siguiente_codigo_domiciliario(),
-        d["idMedioTransporte"], 1))
+    """Registra un domiciliario nuevo o añade ese rol a un usuario existente."""
+    conexion = obtener_conexion()
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        cursor.execute(
+            "SELECT 1 FROM usuario WHERE identificacion = %s",
+            (d["identificacion"],))
+        usuario_existente = cursor.fetchone() is not None
+
+        cursor.execute(
+            "SELECT IFNULL(MAX(codigoDomiciliario), 100) + 1 "
+            "FROM domiciliario")
+        codigo_domiciliario = int(cursor.fetchone()[0])
+
+        if not usuario_existente:
+            cursor.callproc("insertar_domiciliario", [
+                d["identificacion"], d["nombre"], d["apellidoPaterno"],
+                d["apellidoMaterno"], d["telefono"], d["correo"],
+                codigo_domiciliario, d["idMedioTransporte"], 1])
+            for resultado in cursor.stored_results():
+                resultado.fetchall()
+        else:
+            cursor.execute(
+                "SELECT 1 FROM domiciliario WHERE identificacion = %s",
+                (d["identificacion"],))
+            if cursor.fetchone() is not None:
+                raise ErrorBD("Esta identificación ya está registrada como domiciliario.")
+
+            # Usuario ya existe (por ejemplo, como cliente): añadir solo el rol.
+            cursor.execute(
+                "INSERT INTO domiciliario "
+                "(identificacion, codigoDomiciliario, idMedioTransporte, idEstadoDomiciliario) "
+                "VALUES (%s, %s, %s, %s)",
+                (d["identificacion"], codigo_domiciliario,
+                 d["idMedioTransporte"], 1))
+
+        conexion.commit()
+    except ErrorBD:
+        conexion.rollback()
+        raise
+    except mysql.connector.Error as e:
+        conexion.rollback()
+        raise ErrorBD(e.msg) from e
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conexion.close()
