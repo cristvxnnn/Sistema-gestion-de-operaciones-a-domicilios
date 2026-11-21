@@ -65,6 +65,7 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
         self.establecimiento_actual = None
         self.producto_actual = None
         self.datos_externos = {}
+        self.metodo_pago_actual = None
         self.imagenes_cache = {}
         self.canvas_rueda = None
         self.indice_paso = 0
@@ -320,14 +321,18 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
             ).pack(anchor="w", pady=(4, 0))
             productos = catalogo_para_establecimiento(nombre)
             ttk.Label(
-                tarjeta, text=f"{len(productos)} producto(s) disponibles",
+                tarjeta,
+                text=(f"{len(productos)} producto(s) disponibles"
+                      if productos else "Catálogo sin productos disponibles"),
                 style="TarjetaTexto.TLabel"
             ).pack(anchor="w", pady=(2, 0))
             ttk.Button(
                 tarjeta,
-                text="Seleccionado" if seleccionado else "Elegir establecimiento",
+                text=("Seleccionado" if seleccionado else "Elegir establecimiento")
+                if productos else "Sin productos",
                 style="MenuActivo.TButton" if seleccionado else "Accion.TButton",
-                command=lambda valor=nombre: self._seleccionar_establecimiento(valor)
+                command=lambda valor=nombre: self._seleccionar_establecimiento(valor),
+                state="normal" if productos else "disabled",
             ).pack(anchor="w", pady=(13, 0))
             self._registrar_rueda_recursivo(tarjeta, _canvas)
 
@@ -541,8 +546,10 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
         try:
             monto = Decimal(
                 self.ent_monto_externa.get().strip().replace(",", "."))
-        except InvalidOperation:
+        except (InvalidOperation, ValueError):
             raise ValueError("El monto debe ser un número.")
+        if not monto.is_finite():
+            raise ValueError("El monto debe ser un número finito.")
         if monto <= 0:
             raise ValueError("El monto debe ser mayor que cero.")
         if not self.ent_via.get().strip() or not self.ent_num.get().strip():
@@ -590,6 +597,10 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
     def _paso_anterior(self):
         if self.indice_paso <= 0:
             return
+        if self.pasos[self.indice_paso][0] == "confirmar":
+            metodo = self.cmb_metodo.get().strip()
+            if metodo in self.metodos:
+                self.metodo_pago_actual = metodo
         self.indice_paso -= 1
         self._mostrar_paso()
 
@@ -644,10 +655,14 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
             marco, values=list(self.metodos), state="readonly", width=30)
         self.cmb_metodo.grid(
             row=len(datos_resumen) + 1, column=1, sticky="w", pady=5)
-        if "Efectivo" in self.metodos:
+        if self.metodo_pago_actual in self.metodos:
+            self.cmb_metodo.set(self.metodo_pago_actual)
+        elif "Efectivo" in self.metodos:
             self.cmb_metodo.set("Efectivo")
+            self.metodo_pago_actual = "Efectivo"
         elif self.metodos:
             self.cmb_metodo.current(0)
+            self.metodo_pago_actual = self.cmb_metodo.get()
 
     def _leer(self):
         if not self.cmb_metodo.get():
