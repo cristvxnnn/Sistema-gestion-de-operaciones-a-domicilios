@@ -9,6 +9,19 @@ import unicodedata
 
 IMAGENES_DIR = Path(__file__).resolve().parent.parent / "imagenes"
 
+IMAGENES_ESTABLECIMIENTOS = {
+    "Carulla": "carulla.png",
+    "Cruz Verde": "cruz_verde.png",
+    "Crepes & Waffles": "crepes_waffles.png",
+    "Farmatodo": "farmatodo.png",
+    "Frisby": "frisby.png",
+    "Surtifamiliar": "surtifamiliar.png",
+    "Droquímicos Cali": "droquimicos_cali.png",
+    "Inter Rapidísimo S.A.": "inter_rapidisimo.png",
+    "Servientrega": "servientrega.png",
+    "Krika": "krika.png",
+}
+
 # Archivos entregados en la carpeta imagenes. Un mismo producto puede aparecer
 # en más de un establecimiento y reutilizar la misma imagen local.
 IMAGENES_LOCALES = {
@@ -352,6 +365,12 @@ CATALOGO_PRODUCTOS = {
 def _imagen_local(nombre_archivo):
     """Devuelve una URL file:// compatible con los cargadores de imágenes."""
     return (IMAGENES_DIR / nombre_archivo).resolve().as_uri()
+
+
+def imagen_establecimiento(nombre):
+    """Devuelve la URL local del logo de un establecimiento, si existe."""
+    nombre_archivo = IMAGENES_ESTABLECIMIENTOS.get(nombre)
+    return _imagen_local(nombre_archivo) if nombre_archivo else ""
 
 
 # Sustituye los placeholders del catálogo por los archivos entregados.

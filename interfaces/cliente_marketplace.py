@@ -15,7 +15,8 @@ from interfaces.panel_base import PanelBase
 from interfaces.validaciones import MAX_TEXTO_SQL
 from operaciones import cliente as op
 from operaciones.accesos import listar_barrios
-from operaciones.catalogos import catalogo_para_establecimiento
+from operaciones.catalogos import (
+    catalogo_para_establecimiento, imagen_establecimiento)
 
 try:
     from PIL import Image, ImageOps, ImageTk
@@ -353,6 +354,12 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
                 row=indice // 2, column=indice % 2,
                 padx=8, pady=8, sticky="nsew")
             interior.columnconfigure(indice % 2, weight=1)
+            logo = ctk.CTkLabel(
+                tarjeta, text="", height=78,
+                fg_color=COLORES["tarjeta"], corner_radius=10)
+            logo.pack(fill="x", padx=16, pady=(12, 2))
+            self._cargar_imagen(
+                logo, imagen_establecimiento(nombre), ajustar="contain")
             ctk.CTkLabel(
                 tarjeta, text=nombre, text_color=COLORES["texto"],
                 font=("Segoe UI", 13, "bold"), wraplength=280,
@@ -807,7 +814,7 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
         self.btn_atras.configure(state="normal" if self.indice_paso > 0 else "disabled")
         messagebox.showerror("No se pudo crear la solicitud", str(error))
 
-    def _cargar_imagen(self, etiqueta, url):
+    def _cargar_imagen(self, etiqueta, url, ajustar="cover"):
         if not url:
             etiqueta.configure(text="Sin imagen")
             return
@@ -823,18 +830,19 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
             try:
                 with urlopen(url, timeout=5) as respuesta:
                     imagen = Image.open(
-                        BytesIO(respuesta.read())).convert("RGB")
+                        BytesIO(respuesta.read())).convert("RGBA")
             except Exception:
                 imagen = None
             try:
                 self.after(
-                    0, lambda: self._aplicar_imagen(etiqueta, url, imagen))
+                    0, lambda: self._aplicar_imagen(
+                        etiqueta, url, imagen, ajustar))
             except (RuntimeError, AttributeError):
                 pass
 
         Thread(target=descargar, daemon=True).start()
 
-    def _aplicar_imagen(self, etiqueta, url, imagen):
+    def _aplicar_imagen(self, etiqueta, url, imagen, ajustar="cover"):
         try:
             existe = etiqueta.winfo_exists()
         except tk.TclError:
@@ -848,9 +856,19 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
         alto = max(etiqueta.winfo_height(), 112)
         remuestreos = getattr(Image, "Resampling", Image)
         remuestreo = getattr(remuestreos, "LANCZOS", 1)
-        imagen = ImageOps.fit(
-            imagen, (ancho, alto), method=remuestreo,
-            centering=(0.5, 0.5))
+        if ajustar == "contain":
+            imagen.thumbnail((max(ancho - 12, 1), max(alto - 12, 1)), remuestreo)
+            lienzo = Image.new("RGBA", (ancho, alto), COLORES["tarjeta"])
+            posicion = (
+                (ancho - imagen.width) // 2,
+                (alto - imagen.height) // 2,
+            )
+            lienzo.alpha_composite(imagen, posicion)
+            imagen = lienzo
+        else:
+            imagen = ImageOps.fit(
+                imagen, (ancho, alto), method=remuestreo,
+                centering=(0.5, 0.5))
         foto = ImageTk.PhotoImage(imagen)
         self.imagenes_cache[url] = foto
         etiqueta.configure(image=foto, text="")
