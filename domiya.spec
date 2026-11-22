@@ -4,6 +4,7 @@ from PyInstaller.utils.hooks import collect_all
 
 root = Path(SPECPATH)
 datas = [(str(root / "imagenes"), "imagenes")]
+datas += [(str(root / "database" / "SQL proyectoFinal.sql"), "database")]
 binaries = []
 hiddenimports = []
 

@@ -35,8 +35,7 @@ class PanelBase(ctk.CTkFrame):
             self.btn_incidentes.pack(fill="both", expand=True)
             self.dot_incidentes = ctk.CTkLabel(
                 caja_campana, text="", width=10, height=10,
-                corner_radius=5, fg_color="#E5484D",
-                border_width=2, border_color=COLORES["fondo"])
+                corner_radius=5, fg_color="#E5484D")
             self.dot_incidentes.bind(
                 "<Button-1>", lambda _evento: self._abrir_popup_incidentes())
             self.dot_incidentes.place(relx=0.86, rely=0.14, anchor="center")
