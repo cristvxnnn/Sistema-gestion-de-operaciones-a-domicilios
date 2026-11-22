@@ -18,14 +18,12 @@ class VentanaPrincipal(ctk.CTk):
         ctk.set_widget_scaling(1.08)
         super().__init__()
         self.title("EntreCali · Domicilios en Cali")
-        ancho = min(1120, self.winfo_screenwidth() - 40)
-        alto = min(700, self.winfo_screenheight() - 80)
+        ancho = min(1366, self.winfo_screenwidth() - 40)
+        alto = min(820, self.winfo_screenheight() - 80)
         posicion_x = max((self.winfo_screenwidth() - ancho) // 2, 0)
         posicion_y = max((self.winfo_screenheight() - alto) // 2, 0)
         self.geometry(f"{ancho}x{alto}+{posicion_x}+{posicion_y}")
-        self.minsize(min(940, self.winfo_screenwidth() - 40),
-                     min(620, self.winfo_screenheight() - 80))
-        self.resizable(True, True)
+        self.resizable(False, False)
         aplicar_estilos(self)
 
         self.sesion = None          # {"rol", "identificacion", "nombre"} o None

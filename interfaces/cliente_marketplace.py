@@ -821,9 +821,11 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
         if Image is None or ImageTk is None:
             etiqueta.configure(text="Imagen no disponible")
             return
-        if url in self.imagenes_cache:
-            etiqueta.configure(image=self.imagenes_cache[url], text="")
-            etiqueta.image = self.imagenes_cache[url]
+        tipo_etiqueta = "ctk" if isinstance(etiqueta, ctk.CTkLabel) else "tk"
+        clave_cache = (url, tipo_etiqueta, ajustar)
+        if clave_cache in self.imagenes_cache:
+            etiqueta.configure(image=self.imagenes_cache[clave_cache], text="")
+            etiqueta.image = self.imagenes_cache[clave_cache]
             return
 
         def descargar():
@@ -852,6 +854,7 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
         if imagen is None:
             etiqueta.configure(text="Imagen no disponible")
             return
+        tipo_etiqueta = "ctk" if isinstance(etiqueta, ctk.CTkLabel) else "tk"
         ancho = max(etiqueta.winfo_width(), 260)
         alto = max(etiqueta.winfo_height(), 112)
         remuestreos = getattr(Image, "Resampling", Image)
@@ -869,7 +872,12 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
             imagen = ImageOps.fit(
                 imagen, (ancho, alto), method=remuestreo,
                 centering=(0.5, 0.5))
-        foto = ImageTk.PhotoImage(imagen)
-        self.imagenes_cache[url] = foto
+        if isinstance(etiqueta, ctk.CTkLabel):
+            foto = ctk.CTkImage(
+                light_image=imagen, dark_image=imagen,
+                size=(imagen.width, imagen.height))
+        else:
+            foto = ImageTk.PhotoImage(imagen)
+        self.imagenes_cache[(url, tipo_etiqueta, ajustar)] = foto
         etiqueta.configure(image=foto, text="")
         etiqueta.image = foto
