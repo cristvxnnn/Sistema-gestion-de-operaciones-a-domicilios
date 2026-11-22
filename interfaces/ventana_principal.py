@@ -182,7 +182,7 @@ class VentanaPrincipal(ctk.CTk):
         detalle = ctk.CTkFrame(perfil, fg_color="transparent")
         detalle.pack(side="left", fill="x", expand=True, padx=(0, 8))
         self.lbl_nombre_perfil = ctk.CTkLabel(
-            detalle, text=self.sesion["nombre"], text_color="#FFFFFF",
+            detalle, text='Hola, ' + self.sesion["nombre"], text_color="#FFFFFF",
             font=("Segoe UI", 12, "bold"), anchor="w")
         self.lbl_nombre_perfil.pack(fill="x")
         ctk.CTkLabel(

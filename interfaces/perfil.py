@@ -185,6 +185,17 @@ class VentanaPerfil(ctk.CTkToplevel):
 
         if p["esCliente"]:
             self._datos_rol("Datos de cliente")
+
+            ctk.CTkLabel(
+                self.contenedor,
+                text="Dirección de entrega para tus pedidos",
+                text_color=COLORES["texto_suave"],
+                font=("Segoe UI", 11),
+                anchor="w",
+                wraplength=580,
+                justify="left"
+            ).pack(fill="x", padx=18, pady=(0, 8))
+
             cliente = ctk.CTkFrame(self.contenedor, fg_color="transparent")
             cliente.pack(fill="x", padx=8)
             cliente.grid_columnconfigure((0, 1), weight=1)

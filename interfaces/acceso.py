@@ -18,7 +18,7 @@ CAMPOS_CLIENTE = [
     ("apellidoMaterno", "Apellido materno (opcional)", "texto", False),
     ("telefono", "Teléfono", "entero", True),
     ("correo", "Correo electrónico", "texto", True),
-    ("viaPrincipal", "Vía principal (ej. Calle 49)", "texto", True),
+    ("viaPrincipal", "Dirección de entrega: Vía principal (ej. Calle 49)", "texto", True),
     ("numero", "Número (ej. 13-22)", "texto", True),
     ("idBarrio", "Barrio", "combo", True),
     ("referencia", "Referencia (opcional)", "texto", False),
@@ -85,7 +85,7 @@ class PantallaAcceso(ctk.CTkFrame):
         formulario.pack_propagate(False)
         formulario.place(relx=0.5, rely=0.48, anchor="center")
         ctk.CTkLabel(
-            formulario, text="Qué gusto verte", text_color=COLORES["texto"],
+            formulario, text="¡Qué gusto verte!", text_color=COLORES["texto"],
             font=("Segoe UI", 20, "bold")).pack(anchor="w", padx=28, pady=(24, 4))
         ctk.CTkLabel(
             formulario, text="Escribe tu identificación para continuar.",
@@ -135,6 +135,7 @@ class PantallaAcceso(ctk.CTkFrame):
             marco, fg_color=COLORES["fondo"], corner_radius=14)
         formulario.pack(fill="both", expand=True, padx=12, pady=12)
         formulario.grid_columnconfigure((0, 1), weight=1)
+        
         for i, (clave, etiqueta, tipo, _) in enumerate(self.campos):
             fila, col = i // 2, i % 2
             bloque = ctk.CTkFrame(formulario, fg_color="transparent")
