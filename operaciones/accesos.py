@@ -28,6 +28,119 @@ def buscar_usuario(identificacion):
     return filas[0] if filas else None
 
 
+def obtener_perfil(identificacion):
+    """Obtiene los datos comunes y los datos específicos de cada rol."""
+    filas = ejecutar_consulta(
+        "SELECT u.identificacion, u.nombre, u.apellidoPaterno, "
+        "u.apellidoMaterno, u.telefono, u.correo, "
+        "c.identificacion IS NOT NULL AS esCliente, "
+        "c.viaPrincipal, c.numero, c.idBarrio, b.nombreBarrio, c.referencia, "
+        "d.identificacion IS NOT NULL AS esDomiciliario, "
+        "d.codigoDomiciliario, d.idMedioTransporte, "
+        "mt.nombreMedioTransporte, d.idEstadoDomiciliario, "
+        "ed.nombreEstadoDomiciliario "
+        "FROM usuario u "
+        "LEFT JOIN cliente c ON c.identificacion = u.identificacion "
+        "LEFT JOIN barrio b ON b.idBarrio = c.idBarrio "
+        "LEFT JOIN domiciliario d ON d.identificacion = u.identificacion "
+        "LEFT JOIN medioTransporte mt "
+        "ON mt.idMedioTransporte = d.idMedioTransporte "
+        "LEFT JOIN estadoDomiciliario ed "
+        "ON ed.idEstadoDomiciliario = d.idEstadoDomiciliario "
+        "WHERE u.identificacion = %s",
+        (identificacion,))
+    return filas[0] if filas else None
+
+
+def actualizar_perfil(datos):
+    """Actualiza datos personales y la información de los roles existentes."""
+    conexion = obtener_conexion()
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        cursor.execute(
+            "UPDATE usuario SET nombre = %s, apellidoPaterno = %s, "
+            "apellidoMaterno = %s, telefono = %s, correo = %s "
+            "WHERE identificacion = %s",
+            (datos["nombre"], datos["apellidoPaterno"],
+             datos["apellidoMaterno"], datos["telefono"], datos["correo"],
+             datos["identificacion"]))
+
+        if datos.get("esCliente"):
+            cursor.execute(
+                "UPDATE cliente SET viaPrincipal = %s, numero = %s, "
+                "idBarrio = %s, referencia = %s WHERE identificacion = %s",
+                (datos["viaPrincipal"], datos["numero"], datos["idBarrio"],
+                 datos["referencia"], datos["identificacion"]))
+
+        if datos.get("esDomiciliario"):
+            cursor.execute(
+                "UPDATE domiciliario SET idMedioTransporte = %s, "
+                "idEstadoDomiciliario = %s WHERE identificacion = %s",
+                (datos["idMedioTransporte"], datos["idEstadoDomiciliario"],
+                 datos["identificacion"]))
+
+        conexion.commit()
+    except ErrorBD:
+        conexion.rollback()
+        raise
+    except mysql.connector.Error as e:
+        conexion.rollback()
+        raise ErrorBD(e.msg) from e
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conexion.close()
+
+
+def eliminar_cuenta(identificacion):
+    """Elimina una cuenta y sus solicitudes como cliente de forma transaccional."""
+    conexion = obtener_conexion()
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        cursor.execute(
+            "SELECT COUNT(*) FROM solicitud "
+            "WHERE identificacionDomiciliario = %s",
+            (identificacion,))
+        if cursor.fetchone()[0]:
+            raise ErrorBD(
+                "No puedes eliminar la cuenta mientras tengas solicitudes "
+                "asignadas como domiciliario.")
+
+        cursor.execute(
+            "SELECT numeroSolicitud FROM solicitud "
+            "WHERE identificacionCliente = %s",
+            (identificacion,))
+        solicitudes = [fila[0] for fila in cursor.fetchall()]
+        if solicitudes:
+            marcadores = ", ".join(["%s"] * len(solicitudes))
+            cursor.execute(
+                f"DELETE FROM incidente WHERE numeroSolicitud IN ({marcadores})",
+                tuple(solicitudes))
+            cursor.execute(
+                f"DELETE FROM solicitud WHERE numeroSolicitud IN ({marcadores})",
+                tuple(solicitudes))
+
+        cursor.execute("DELETE FROM cliente WHERE identificacion = %s",
+                       (identificacion,))
+        cursor.execute("DELETE FROM domiciliario WHERE identificacion = %s",
+                       (identificacion,))
+        cursor.execute("DELETE FROM usuario WHERE identificacion = %s",
+                       (identificacion,))
+        conexion.commit()
+    except ErrorBD:
+        conexion.rollback()
+        raise
+    except mysql.connector.Error as e:
+        conexion.rollback()
+        raise ErrorBD(e.msg) from e
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conexion.close()
+
+
 def listar_barrios():
     return ejecutar_consulta("SELECT idBarrio, nombreBarrio FROM barrio ORDER BY nombreBarrio")
 

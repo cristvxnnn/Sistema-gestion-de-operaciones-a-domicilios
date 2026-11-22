@@ -1,3 +1,4 @@
+import tkinter as tk
 import customtkinter as ctk
 from tkinter import ttk, messagebox
 
@@ -5,6 +6,7 @@ from database.conexion import probar_conexion
 from interfaces.estilos import aplicar_estilos, COLORES
 from interfaces.inicio import PantallaInicio
 from interfaces.acceso import PantallaAcceso
+from interfaces.perfil import VentanaPerfil
 from interfaces.menus import MENUS, TITULOS_ROL
 from interfaces.componentes import ejecutar_en_segundo_plano
 
@@ -98,6 +100,35 @@ class VentanaPrincipal(ctk.CTk):
     def cerrar_sesion(self):
         self.mostrar_inicio()
 
+    def abrir_perfil(self):
+        if not self.sesion:
+            return
+        perfil = getattr(self, "_ventana_perfil", None)
+        if perfil is not None and perfil.winfo_exists():
+            perfil.focus_force()
+            return
+        self._ventana_perfil = VentanaPerfil(self)
+
+    def _hacer_perfil_clicable(self, widget):
+        widget.bind(
+            "<Button-1>", lambda _evento: self.abrir_perfil(), add="+")
+        widget.bind(
+            "<Enter>", lambda _evento: self._marcar_perfil_hover(True), add="+")
+        widget.bind(
+            "<Leave>", lambda _evento: self._marcar_perfil_hover(False), add="+")
+        try:
+            widget.configure(cursor="hand2")
+        except (tk.TclError, ValueError):
+            pass
+        for hijo in widget.winfo_children():
+            self._hacer_perfil_clicable(hijo)
+
+    def _marcar_perfil_hover(self, activo):
+        perfil = getattr(self, "_perfil_frame", None)
+        if perfil is not None and perfil.winfo_exists():
+            perfil.configure(
+                fg_color="#244A7F" if activo else COLORES["menu_hover_oscuro"])
+
     def mostrar_modulo(self, clave):
         rol = self.sesion["rol"]
         clase = next(c for k, _, c in MENUS[rol] if k == clave)
@@ -128,6 +159,7 @@ class VentanaPrincipal(ctk.CTk):
 
         perfil = ctk.CTkFrame(
             self.menu, fg_color=COLORES["menu_hover_oscuro"], corner_radius=14)
+        self._perfil_frame = perfil
         perfil.pack(fill="x", padx=14, pady=(0, 22))
         inicial = (self.sesion["nombre"] or TITULOS_ROL[rol])[0].upper()
         ctk.CTkLabel(
@@ -137,12 +169,14 @@ class VentanaPrincipal(ctk.CTk):
                 side="left", padx=12, pady=12)
         detalle = ctk.CTkFrame(perfil, fg_color="transparent")
         detalle.pack(side="left", fill="x", expand=True, padx=(0, 8))
-        ctk.CTkLabel(
+        self.lbl_nombre_perfil = ctk.CTkLabel(
             detalle, text=self.sesion["nombre"], text_color="#FFFFFF",
-            font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x")
+            font=("Segoe UI", 12, "bold"), anchor="w")
+        self.lbl_nombre_perfil.pack(fill="x")
         ctk.CTkLabel(
             detalle, text=TITULOS_ROL[rol], text_color="#C7D5E8",
             font=("Segoe UI", 10), anchor="w").pack(fill="x")
+        self._hacer_perfil_clicable(perfil)
 
         navegacion = ctk.CTkScrollableFrame(
             self.menu, fg_color="transparent", corner_radius=0,
