@@ -1,80 +1,170 @@
+import sys
+import tkinter as tk
+from pathlib import Path
+
 import customtkinter as ctk
+from PIL import Image, ImageOps, ImageTk
 
 from interfaces.estilos import COLORES
 
 
+def _ruta_recurso(nombre):
+    """Encuentra recursos tanto al ejecutar Python como dentro del .exe."""
+    raiz = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
+    return raiz / "imagenes" / nombre
+
+
 class PantallaInicio(ctk.CTkFrame):
+    """Portada de EntreCali con ilustración y acceso por perfil."""
+
     def __init__(self, parent, ventana=None):
-        super().__init__(parent, fg_color=COLORES["fondo"], corner_radius=0)
+        super().__init__(parent, fg_color="#F3F6FC", corner_radius=0)
         self.ventana = ventana
+        self._escena_original = self._abrir_imagen("assets_inicio/portada_escena.png")
+        self._logo = None
+        self._imagen_escena = None
+        self._iconos_perfil = []
 
-        hero = ctk.CTkFrame(
-            self, fg_color=COLORES["menu"], corner_radius=24)
-        hero.pack(side="left", fill="both", expand=True, padx=(28, 14), pady=28)
-        hero.columnconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=1)
+
+        cabecera = ctk.CTkFrame(self, fg_color="transparent", height=76)
+        cabecera.grid(row=0, column=0, sticky="ew", padx=28, pady=(10, 5))
+        cabecera.grid_columnconfigure(0, weight=1)
+        logo = self._abrir_imagen("assets_inicio/portada_logo.png")
+        if logo:
+            self._logo = ctk.CTkImage(
+                light_image=logo, dark_image=logo, size=(238, 75))
+            ctk.CTkLabel(cabecera, text="", image=self._logo).grid(
+                row=0, column=0, sticky="w")
+        else:
+            ctk.CTkLabel(
+                cabecera, text="ENTRECALI", text_color=COLORES["texto"],
+                font=("Segoe UI", 24, "bold")).grid(row=0, column=0, sticky="w")
+
+        estado_ciudad = ctk.CTkFrame(
+            cabecera, fg_color="#FFFFFF", corner_radius=22,
+            border_width=1, border_color="#DCE6F3")
+        estado_ciudad.grid(row=0, column=1, sticky="e", padx=(0, 4))
+        ctk.CTkLabel(
+            estado_ciudad, text="Domicilios en Cali", text_color="#354C70",
+            font=("Segoe UI", 11)).pack(side="left", padx=14, pady=8)
+
+        contenido = ctk.CTkFrame(self, fg_color="transparent")
+        contenido.grid(row=1, column=0, sticky="nsew", padx=24, pady=(0, 8))
+        contenido.grid_columnconfigure(0, weight=49, uniform="paneles")
+        contenido.grid_columnconfigure(1, weight=51, uniform="paneles")
+        contenido.grid_rowconfigure(0, weight=1)
+
+        visual = ctk.CTkFrame(contenido, fg_color="transparent", corner_radius=0)
+        visual.grid(row=0, column=0, sticky="nsew", padx=(0, 12))
+        visual.grid_columnconfigure(0, weight=1)
+        visual.grid_rowconfigure(4, weight=1)
 
         ctk.CTkLabel(
-            hero, text="🛵", font=("Segoe UI Emoji", 74),
-            text_color="#F58220").pack(anchor="w", padx=48, pady=(58, 10))
+            visual, text="Cali se mueve", text_color="#122B50",
+            font=("Segoe UI", 30, "bold"), anchor="w").grid(
+                row=0, column=0, sticky="ew", padx=(16, 8), pady=(22, 0))
         ctk.CTkLabel(
-            hero, text="DOMIYA", text_color="#FFFFFF",
-            font=("Segoe UI", 40, "bold")).pack(anchor="w", padx=48)
+            visual, text="contigo", text_color="#F58220",
+            font=("Segoe UI", 31, "bold"), anchor="w").grid(
+                row=1, column=0, sticky="ew", padx=(16, 8), pady=0)
+        ctk.CTkFrame(
+            visual, fg_color=COLORES["acento"], corner_radius=3, height=4,
+            width=110).grid(row=2, column=0, sticky="w", padx=(130, 0), pady=(0, 1))
         ctk.CTkLabel(
-            hero, text="Domicilios en Cali", text_color="#F8A34E",
-            font=("Segoe UI", 20, "bold")).pack(anchor="w", padx=50, pady=(0, 22))
-        ctk.CTkLabel(
-            hero, text="Rápido  •  Seguro  •  Confiable",
-            text_color="#D8E2F0", font=("Segoe UI", 15)).pack(
-                anchor="w", padx=50)
-        ctk.CTkLabel(
-            hero, text="Conectamos a Cali con lo que necesitas.",
-            text_color="#AFC1D8", font=("Segoe UI", 12)).pack(
-                anchor="w", padx=50, pady=(8, 0))
-        ctk.CTkLabel(
-            hero, text="Santiago de Cali  ·  Colombia",
-            text_color="#93A9C5", font=("Segoe UI", 10)).pack(
-                side="bottom", anchor="w", padx=32, pady=24)
+            visual, text="Comercios, pedidos y domicilios\nen un mismo lugar.",
+            text_color="#526789", font=("Segoe UI", 13), anchor="w",
+            justify="left").grid(row=3, column=0, sticky="ew",
+                                 padx=(18, 8), pady=(5, 0))
 
-        acceso = ctk.CTkFrame(self, fg_color="transparent", width=420)
-        acceso.pack(side="right", fill="y", padx=(14, 28), pady=28)
-        acceso.pack_propagate(False)
+        escena = ctk.CTkFrame(visual, fg_color="transparent", corner_radius=0)
+        escena.grid(row=4, column=0, sticky="nsew", padx=(0, 0), pady=(0, 0))
+        escena.grid_columnconfigure(0, weight=1)
+        escena.grid_rowconfigure(0, weight=1)
+        self._lbl_escena = tk.Label(
+            escena, borderwidth=0, highlightthickness=0,
+            background="#F3F6FC", anchor="center")
+        self._lbl_escena.grid(row=0, column=0, sticky="nsew")
+        self._lbl_escena.bind("<Configure>", self._ajustar_escena, add="+")
+
+        acceso = ctk.CTkFrame(
+            contenido, fg_color="#FFFFFF", corner_radius=24,
+            border_width=1, border_color="#E1E8F3")
+        acceso.grid(row=0, column=1, sticky="nsew", padx=(12, 0))
+        acceso.grid_columnconfigure(0, weight=1)
+        acceso.grid_rowconfigure(0, weight=1)
+        acceso.grid_rowconfigure(7, weight=1)
         ctk.CTkLabel(
-            acceso, text="Bienvenido", text_color=COLORES["texto"],
-            font=("Segoe UI", 28, "bold")).pack(anchor="w", pady=(68, 5))
+            acceso, text="¡Bienvenido!", text_color="#122B50",
+            font=("Segoe UI", 29, "bold"), anchor="w").grid(
+                row=1, column=0, sticky="ew", padx=30, pady=(18, 1))
         ctk.CTkLabel(
-            acceso, text="Elige cómo quieres ingresar al sistema.",
-            text_color=COLORES["texto_suave"], font=("Segoe UI", 13),
-            wraplength=370, justify="left").pack(anchor="w", pady=(0, 26))
+            acceso, text="Selecciona tu perfil para continuar.",
+            text_color="#526789", font=("Segoe UI", 13), anchor="w").grid(
+                row=2, column=0, sticky="ew", padx=30, pady=(0, 0))
+        ctk.CTkFrame(
+            acceso, fg_color=COLORES["acento"], corner_radius=3,
+            width=104, height=5).grid(row=3, column=0, sticky="w",
+                                      padx=30, pady=(14, 18))
 
         opciones = [
-            ("🛍️", "Cliente", "Crea solicitudes y consulta tus pedidos.",
+            ("perfil_cliente.png", "Cliente",
+             "Realiza pedidos y consulta tus compras.",
              lambda: ventana.mostrar_acceso("cliente")),
-            ("🛵", "Domiciliario", "Gestiona entregas y reporta incidentes.",
+            ("perfil_domiciliario.png", "Domiciliario",
+             "Gestiona entregas y actualiza pedidos.",
              lambda: ventana.mostrar_acceso("domiciliario")),
-            ("⚙️", "Administrador", "Consulta la operación del sistema.",
+            ("perfil_admin.png", "Administrador",
+             "Controla la operación del sistema.",
              ventana.entrar_admin),
         ]
-        for icono, titulo, descripcion, accion in opciones:
+        for fila, (archivo_icono, titulo, descripcion, accion) in enumerate(opciones, start=4):
             tarjeta = ctk.CTkFrame(
-                acceso, fg_color=COLORES["tarjeta"], corner_radius=16,
-                border_width=1, border_color=COLORES["borde"])
-            tarjeta.pack(fill="x", pady=7)
+                acceso, fg_color="#FFFFFF", corner_radius=17,
+                border_width=1, border_color="#E0E7F2")
+            tarjeta.grid(row=fila, column=0, sticky="ew", padx=20, pady=7)
+            tarjeta.grid_columnconfigure(1, weight=1)
+            icono = self._abrir_imagen(f"assets_inicio/{archivo_icono}")
+            if icono:
+                imagen_icono = ctk.CTkImage(
+                    light_image=icono, dark_image=icono, size=(70, 70))
+                self._iconos_perfil.append(imagen_icono)
+                ctk.CTkLabel(tarjeta, text="", image=imagen_icono).grid(
+                    row=0, column=0, padx=(11, 12), pady=11)
+            textos = ctk.CTkFrame(tarjeta, fg_color="transparent")
+            textos.grid(row=0, column=1, sticky="ew", pady=12)
             ctk.CTkLabel(
-                tarjeta, text=icono, width=44, height=44, corner_radius=12,
-                fg_color=COLORES["acento_claro"],
-                font=("Segoe UI Emoji", 20)).pack(
-                    side="left", padx=14, pady=14)
-            texto = ctk.CTkFrame(tarjeta, fg_color="transparent")
-            texto.pack(side="left", fill="x", expand=True, padx=(0, 8), pady=12)
-            ctk.CTkLabel(
-                texto, text=titulo, text_color=COLORES["texto"],
+                textos, text=titulo, text_color="#122B50",
                 font=("Segoe UI", 14, "bold"), anchor="w").pack(fill="x")
             ctk.CTkLabel(
-                texto, text=descripcion, text_color=COLORES["texto_suave"],
-                font=("Segoe UI", 10), anchor="w", wraplength=260,
+                textos, text=descripcion, text_color="#526789",
+                font=("Segoe UI", 10), anchor="w", wraplength=240,
                 justify="left").pack(fill="x", pady=(2, 0))
             ctk.CTkButton(
-                tarjeta, text="Entrar", width=76, height=34, corner_radius=9,
-                fg_color=COLORES["acento"], hover_color="#E66F10",
-                font=("Segoe UI", 11, "bold"), command=accion).pack(
-                    side="right", padx=14, pady=14)
+                tarjeta, text="Entrar  ›", width=104, height=44,
+                corner_radius=13, fg_color=COLORES["acento"], hover_color="#E66F10",
+                font=("Segoe UI", 12, "bold"), command=accion).grid(
+                    row=0, column=2, padx=12, pady=12)
+
+        self.after_idle(self._ajustar_escena)
+
+    @staticmethod
+    def _abrir_imagen(nombre):
+        try:
+            return Image.open(_ruta_recurso(nombre)).convert("RGBA")
+        except (OSError, ValueError):
+            return None
+
+    def _ajustar_escena(self, _evento=None):
+        if self._escena_original is None or not self.winfo_exists():
+            return
+        ancho = self._lbl_escena.winfo_width()
+        alto = self._lbl_escena.winfo_height()
+        if ancho < 2 or alto < 2:
+            return
+        escena = ImageOps.contain(
+            self._escena_original, (ancho, alto),
+            method=Image.Resampling.LANCZOS)
+        self._imagen_escena = ImageTk.PhotoImage(escena)
+        self._lbl_escena.configure(image=self._imagen_escena)
