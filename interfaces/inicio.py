@@ -61,19 +61,37 @@ class PantallaInicio(ctk.CTkFrame):
         visual.grid_columnconfigure(0, weight=1)
         visual.grid_rowconfigure(4, weight=1)
 
+        linea_1 = ctk.CTkFrame(visual, fg_color="transparent")
+        linea_1.grid(row=0, column=0, sticky="ew", padx=(16, 8), pady=(22, 0))
+
         ctk.CTkLabel(
-            visual, text="Cali se mueve", text_color="#122B50",
-            font=("Segoe UI", 30, "bold"), anchor="w").grid(
-                row=0, column=0, sticky="ew", padx=(16, 8), pady=(22, 0))
+            linea_1, text="Lo pides en ", text_color="#122B50",
+            font=("Segoe UI", 30, "bold")
+        ).pack(side="left")
+
         ctk.CTkLabel(
-            visual, text="contigo", text_color="#F58220",
-            font=("Segoe UI", 31, "bold"), anchor="w").grid(
-                row=1, column=0, sticky="ew", padx=(16, 8), pady=0)
+            linea_1, text="segundos,", text_color="#F58220",
+            font=("Segoe UI", 30, "bold")
+        ).pack(side="left")
+
+        linea_2 = ctk.CTkFrame(visual, fg_color="transparent")
+        linea_2.grid(row=1, column=0, sticky="ew", padx=(16, 8), pady=0)
+
+        ctk.CTkLabel(
+            linea_2, text="      lo tienes en ", text_color="#122B50",
+            font=("Segoe UI", 31, "bold")
+        ).pack(side="left")
+
+        ctk.CTkLabel(
+            linea_2, text="minutos", text_color="#F58220",
+            font=("Segoe UI", 31, "bold")
+        ).pack(side="left")
+
         ctk.CTkFrame(
             visual, fg_color=COLORES["acento"], corner_radius=3, height=4,
-            width=110).grid(row=2, column=0, sticky="w", padx=(130, 0), pady=(0, 1))
+            width=110).grid(row=2, column=0, sticky="w", padx=(250, 0), pady=(0, 1))
         ctk.CTkLabel(
-            visual, text="Comercios, pedidos y domicilios\nen un mismo lugar.",
+            visual, text="\nTodo lo que necesitas\n hasta la puerta de tu casa.",
             text_color="#526789", font=("Segoe UI", 13), anchor="w",
             justify="left").grid(row=3, column=0, sticky="ew",
                                  padx=(18, 8), pady=(5, 0))
