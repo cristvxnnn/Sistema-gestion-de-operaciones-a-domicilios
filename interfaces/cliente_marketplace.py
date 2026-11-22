@@ -204,8 +204,8 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
     def _mostrar_tipo(self):
         self.lbl_paso.configure(text="1. ¿Cómo quieres realizar la solicitud?")
         self.lbl_ayuda.configure(
-            text="Selecciona si la solicitud está relacionada con un establecimiento "
-                 "o con una dirección externa.")
+            text="Selecciona si tu pedido será recogido en un establecimiento aliado"
+                 "o en una dirección externa.")
 
         marco = ctk.CTkFrame(self.contenido_paso, fg_color="transparent")
         marco.pack(expand=True, fill="both", padx=8, pady=8)
@@ -555,7 +555,7 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
     def _mostrar_recogida_externa(self):
         self.lbl_paso.configure(text="2. Datos de recogida externa")
         self.lbl_ayuda.configure(
-            text="Describe qué se debe recoger, indica el monto y completa la dirección.")
+            text="Ingresa los detalles de tu pedido, el monto y la dirección de recogida.")
 
         marco = ctk.CTkFrame(
             self.contenido_paso, fg_color=COLORES["tarjeta"], corner_radius=14)
@@ -571,7 +571,7 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
 
         self._campo(marco, "Descripción", self.ent_desc_externa, 0, 0)
         self._campo(marco, "Monto total ($)", self.ent_monto_externa, 0, 1)
-        self._campo(marco, "Vía principal", self.ent_via, 2, 0)
+        self._campo(marco, "Dirección: Vía principal", self.ent_via, 2, 0)
         self._campo(marco, "Número", self.ent_num, 2, 1)
         self._campo(marco, "Barrio", self.cmb_barrio, 4, 0)
         ctk.CTkLabel(

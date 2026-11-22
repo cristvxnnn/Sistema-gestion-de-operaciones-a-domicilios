@@ -1,5 +1,6 @@
 """Módulos del rol cliente: resumen, mis solicitudes, crear solicitud y mis incidentes."""
 import customtkinter as ctk
+import tkinter as tk
 from io import BytesIO
 from decimal import Decimal, InvalidOperation
 from threading import Thread
@@ -51,12 +52,21 @@ class PanelResumenCliente(PanelBase):
 
         indicadores = [("Total de solicitudes", sum(f["total"] for f in estados))]
         indicadores += [(f["estado"], f["total"]) for f in estados]
-        indicadores.append(("Gastado en finalizadas", f"${gastado:,.0f}"))
+        indicadores.append(("Total gastado", f"${gastado:,.0f}"))
 
         rejilla = ttk.Frame(self.contenido, style="Contenido.TFrame")
         rejilla.pack(fill="x")
-        tarjetas = [tarjeta_indicador(rejilla, titulo, valor)
-                    for titulo, valor in indicadores]
+        pasteles = ["#EAF2FF", "#FFF3E0", "#E8F8F0", "#F3ECFF", "#FDECEF", "#FFF9DB"]
+        tarjetas = []
+        for i, (titulo, valor) in enumerate(indicadores):
+            color = pasteles[i % len(pasteles)]
+            t = tk.Frame(rejilla, bg=color, padx=18, pady=18,
+                         highlightbackground="#DCE6F3", highlightthickness=1)
+            tk.Label(t, text=titulo, bg=color, fg="#526789",
+                     font=("Segoe UI", 10)).pack(anchor="w")
+            tk.Label(t, text=str(valor), bg=color, fg="#122B50",
+                     font=("Segoe UI", 20, "bold")).pack(anchor="w", pady=(6, 0))
+            tarjetas.append(t)
         rejilla.bind(
             "<Configure>",
             lambda evento: grilla_responsiva(rejilla, tarjetas, evento.width))
