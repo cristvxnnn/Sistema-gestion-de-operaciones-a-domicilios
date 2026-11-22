@@ -39,6 +39,8 @@ def aplicar_estilos(root):
                  foreground=c["texto_suave"], font=(FUENTE, 10))
     s.configure("Estado.TLabel", background=c["fondo"],
                  foreground=c["texto_suave"], font=(FUENTE, 10))
+    s.configure("Error.TLabel", background=c["tarjeta"],
+                foreground="#B42318", font=(FUENTE, 10))
 
     # Botones del menú lateral
     s.configure("Menu.TButton", background=c["tarjeta"], foreground=c["texto"],

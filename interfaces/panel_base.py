@@ -4,6 +4,7 @@ from tkinter import ttk
 from interfaces.componentes import ejecutar_en_segundo_plano
 from interfaces.estilos import COLORES
 from operaciones import cliente as operaciones_cliente
+from operaciones.estado_local import obtener_incidentes_leidos
 
 
 class PanelBase(ctk.CTkFrame):
@@ -49,31 +50,47 @@ class PanelBase(ctk.CTkFrame):
             text_color=COLORES["texto_suave"],
             font=("Segoe UI", 12), anchor="w").pack(anchor="w", pady=(3, 0))
 
-        self.contenido = ttk.Frame(self, style="Contenido.TFrame")
+        # CTkFrame garantiza el mismo fondo bajo controles CTk y ttk embebidos.
+        self.contenido = ctk.CTkFrame(
+            self, fg_color=COLORES["fondo"], corner_radius=0)
         self.contenido.pack(
             fill="both", expand=True, padx=30, pady=(20, 26))
         self.construir()  # se ejecuta cada vez que se entra al módulo (datos frescos)
         if sesion and sesion.get("rol") == "cliente":
-            ejecutar_en_segundo_plano(
-                self,
-                lambda: operaciones_cliente.listar_incidentes(sesion["identificacion"]),
-                self._actualizar_dot_incidentes, lambda _error: None)
+            self._consultar_incidentes()
+
+    def _consultar_incidentes(self):
+        if not self.winfo_exists():
+            return
+        sesion = getattr(self.ventana, "sesion", None)
+        if not sesion or sesion.get("rol") != "cliente":
+            return
+        # Detecta incidentes nuevos y conserva su estado leído localmente.
+        self.after(30_000, self._consultar_incidentes)
+        identificacion = sesion["identificacion"]
+        ejecutar_en_segundo_plano(
+            self,
+            lambda: operaciones_cliente.listar_incidentes(identificacion),
+            self._actualizar_dot_incidentes, lambda _error: None)
 
     def _actualizar_dot_incidentes(self, incidentes):
-        if incidentes:
+        id_cliente = self.ventana.sesion["identificacion"]
+        leidos = obtener_incidentes_leidos(id_cliente)
+        no_leidos = any(str(fila["codigoIncidente"]) not in leidos for fila in incidentes)
+        if no_leidos:
             self.dot_incidentes.place(relx=0.86, rely=0.14, anchor="center")
         else:
             self.dot_incidentes.place_forget()
 
     def _abrir_popup_incidentes(self):
-        popup = getattr(self, "_popup_incidentes", None)
+        popup = getattr(self.ventana, "_popup_incidentes", None)
         if popup is not None and popup.winfo_exists():
             popup.destroy()
-            self._popup_incidentes = None
+            self.ventana._popup_incidentes = None
             return
         from interfaces.incidentes_popup import PopupIncidentes
 
-        self._popup_incidentes = PopupIncidentes(
+        self.ventana._popup_incidentes = PopupIncidentes(
             self, self.ventana.sesion["identificacion"])
 
     def construir(self):

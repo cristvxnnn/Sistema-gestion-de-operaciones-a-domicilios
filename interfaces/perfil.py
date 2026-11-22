@@ -259,8 +259,13 @@ class VentanaPerfil(ctk.CTkToplevel):
                 width=205, height=38, fg_color=COLORES["acento"],
                 hover_color="#E66F10", command=self._editar)
             self.btn_editar.pack(side="left")
+            tiene_otro_rol = (
+                (self.ventana.sesion["rol"] == "cliente" and self.perfil["esDomiciliario"])
+                or (self.ventana.sesion["rol"] == "domiciliario" and self.perfil["esCliente"]))
             self.btn_eliminar = ctk.CTkButton(
-                self.acciones, text="Eliminar cuenta", width=145, height=38,
+                self.acciones,
+                text="Eliminar rol actual" if tiene_otro_rol else "Eliminar cuenta",
+                width=165 if tiene_otro_rol else 145, height=38,
                 fg_color="#B42318", hover_color="#8F1D14",
                 command=self._confirmar_eliminacion)
             self.btn_eliminar.pack(side="left", padx=10)
@@ -342,6 +347,9 @@ class VentanaPerfil(ctk.CTkToplevel):
 
     def _guardado(self, datos):
         self.ventana.sesion["nombre"] = datos["nombre"]
+        avatar = getattr(self.ventana, "lbl_avatar", None)
+        if avatar is not None and avatar.winfo_exists():
+            avatar.configure(text=(datos["nombre"] or "?")[0].upper())
         if getattr(self.ventana, "lbl_nombre_perfil", None) is not None:
             self.ventana.lbl_nombre_perfil.configure(text=datos["nombre"])
         self.editando = False
@@ -357,10 +365,24 @@ class VentanaPerfil(ctk.CTkToplevel):
                              str(error), parent=self)
 
     def _confirmar_eliminacion(self):
+        rol = self.ventana.sesion["rol"]
+        conserva_otro_rol = (
+            (rol == "cliente" and self.perfil["esDomiciliario"])
+            or (rol == "domiciliario" and self.perfil["esCliente"]))
+        if rol == "cliente":
+            detalle = "Se eliminarán tus solicitudes e incidentes como cliente."
+        else:
+            detalle = (
+                "Se eliminará tu rol de domiciliario. Si hay solicitudes asociadas "
+                "a esta identificación, la operación no podrá completarse.")
+        if conserva_otro_rol:
+            rol_restante = "domiciliario" if rol == "cliente" else "cliente"
+            detalle += f"\n\nSe conservarán tus datos personales y tu rol de {rol_restante}."
+        else:
+            detalle += "\n\nSe eliminará también tu cuenta y tus datos personales."
         confirmado = messagebox.askyesno(
-            "Eliminar cuenta",
-            "Se eliminarán tu cuenta y tus solicitudes como cliente. "
-            "Esta acción no se puede deshacer.\n\n¿Deseas continuar?",
+            "Eliminar rol" if conserva_otro_rol else "Eliminar cuenta",
+            f"{detalle}\n\nEsta acción no se puede deshacer. ¿Deseas continuar?",
             icon="warning", parent=self)
         if not confirmado:
             return
@@ -374,12 +396,17 @@ class VentanaPerfil(ctk.CTkToplevel):
                 "La identificación no coincide.", parent=self)
             return
         ejecutar_en_segundo_plano(
-            self, lambda: op.eliminar_cuenta(self.identificacion),
-            self._cuenta_eliminada,
+            self, lambda: op.eliminar_cuenta(self.identificacion, rol),
+            lambda _resultado: self._cuenta_eliminada(rol, conserva_otro_rol),
             lambda error: messagebox.showerror(
                 "No se pudo eliminar la cuenta", str(error), parent=self))
 
-    def _cuenta_eliminada(self, _resultado):
+    def _cuenta_eliminada(self, rol, conserva_otro_rol):
         self.grab_release()
         self.destroy()
+        if conserva_otro_rol:
+            rol_restante = "domiciliario" if rol == "cliente" else "cliente"
+            messagebox.showinfo(
+                "Rol eliminado",
+                f"Se eliminó tu rol de {rol}. Tu rol de {rol_restante} se conservó.")
         self.ventana.cerrar_sesion()
