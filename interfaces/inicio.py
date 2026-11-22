@@ -47,7 +47,7 @@ class PantallaInicio(ctk.CTkFrame):
             border_width=1, border_color="#DCE6F3")
         estado_ciudad.grid(row=0, column=1, sticky="e", padx=(0, 4))
         ctk.CTkLabel(
-            estado_ciudad, text="Domicilios en Cali", text_color="#354C70",
+            estado_ciudad, text="Sistema de gestión de Domicilios", text_color="#354C70",
             font=("Segoe UI", 11)).pack(side="left", padx=14, pady=8)
 
         contenido = ctk.CTkFrame(self, fg_color="transparent")
@@ -127,11 +127,11 @@ class PantallaInicio(ctk.CTkFrame):
                                       padx=30, pady=(14, 18))
 
         opciones = [
-            ("perfil_cliente.png", "Cliente",
+            ("perfil_cliente2.png", "Cliente",
              "Realiza pedidos y consulta tus compras.",
              lambda: ventana.mostrar_acceso("cliente")),
             ("perfil_domiciliario.png", "Domiciliario",
-             "Gestiona entregas y actualiza pedidos.",
+             "Gestiona tus entregas y pedidos.",
              lambda: ventana.mostrar_acceso("domiciliario")),
             ("perfil_admin.png", "Administrador",
              "Controla la operación del sistema.",
