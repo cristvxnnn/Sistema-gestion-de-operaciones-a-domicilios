@@ -20,7 +20,7 @@ MENUS = {
     "cliente": [
         ("nueva_solicitud", "Crear solicitud", PanelNuevaSolicitudMarketplace),
         ("mis_solicitudes", "Mis solicitudes", PanelMisSolicitudes),
-        ("resumen", "Mi resumen", PanelResumenCliente),
+        ("resumen", "Mi historial", PanelResumenCliente),
     ],
     "domiciliario": [
         ("disponibles", "Solicitudes disponibles", PanelDisponibles),

@@ -24,13 +24,13 @@ except ImportError:  # Las imágenes son opcionales para poder usar el programa 
 
 
 class PanelResumenCliente(PanelBase):
-    TITULO = "Mi resumen"
-    DESCRIPCION = "Resumen de tu actividad."
+    TITULO = "Mi historial"
+    DESCRIPCION = "Consulta el historial de tu actividad."
 
     def construir(self):
         id_cliente = self.ventana.sesion["identificacion"]
         self.lbl_cargando = ttk.Label(
-            self.contenido, text="Cargando tu resumen…",
+            self.contenido, text="Cargando tu historial…",
             style="Subtitulo.TLabel")
         self.lbl_cargando.pack(anchor="w", padx=12, pady=12)
         ejecutar_en_segundo_plano(
