@@ -1,4 +1,6 @@
 """Módulos del rol domiciliario: solicitudes disponibles, mis solicitudes y registrar incidente."""
+import tkinter as tk
+import customtkinter as ctk
 from tkinter import ttk, messagebox
 
 from database.conexion import ErrorBD
@@ -186,6 +188,11 @@ class PanelMisSolicitudesDom(PanelBase):
             messagebox.showinfo("Selecciona una solicitud", "Elige una solicitud de la tabla.")
             return
         numero = fila["numeroSolicitud"]
+        if nuevo_estado == 4 and not messagebox.askyesno(
+                "Finalizar domicilio",
+                f"¿Confirmas que la solicitud {numero} fue entregada?\n\n"
+                "Al finalizarla, este cambio quedará registrado en el historial."):
+            return
         self.btn_en_curso.configure(state="disabled")
         self.btn_finalizada.configure(state="disabled")
         self.btn_actualizar.configure(state="disabled")
@@ -207,6 +214,183 @@ class PanelMisSolicitudesDom(PanelBase):
     def _cambio_fallido(self, error):
         messagebox.showerror("No se pudo cambiar el estado", str(error))
         self._recargar()
+
+
+class PanelHistorialDomiciliario(PanelBase):
+    TITULO = "Mi historial"
+    DESCRIPCION = "Revisa tus entregas finalizadas y el estado de tus solicitudes."
+
+    ESTADOS = {
+        "Creada": "#F4B740",
+        "Asignada": "#4F83CC",
+        "En curso": "#F58220",
+        "Finalizada": "#20A675",
+        "Cancelada": "#D66B75",
+    }
+
+    def construir(self):
+        self.lbl_cargando = ctk.CTkLabel(
+            self.contenido, text="Cargando tu historial…",
+            text_color=COLORES["texto_suave"], font=("Segoe UI", 12))
+        self.lbl_cargando.pack(anchor="w", padx=8, pady=10)
+        ejecutar_en_segundo_plano(
+            self,
+            lambda: op.listar_mis_solicitudes(
+                self.ventana.sesion["identificacion"]),
+            self._mostrar_historial, self._fallo_historial)
+
+    def _fallo_historial(self, error):
+        self.lbl_cargando.destroy()
+        mostrar_error(self.contenido, error)
+
+    def _mostrar_historial(self, solicitudes):
+        self.lbl_cargando.destroy()
+        self.solicitudes = solicitudes
+        conteos = {estado: sum(
+            str(fila.get("estado", "")).casefold() == estado.casefold()
+            for fila in solicitudes) for estado in self.ESTADOS}
+
+        resumen = ctk.CTkFrame(self.contenido, fg_color="transparent")
+        resumen.pack(fill="x", pady=(0, 14))
+        for columna in range(4):
+            resumen.grid_columnconfigure(columna, weight=1, uniform="resumen_dom")
+        tarjetas = [
+            ("Entregas finalizadas", conteos["Finalizada"], "#E7F6EF", "#16845F"),
+            ("En curso", conteos["En curso"], "#FFF0E1", COLORES["acento"]),
+            ("Asignadas", conteos["Asignada"], "#EAF2FF", "#3A6FB5"),
+            ("Solicitudes gestionadas", len(solicitudes), "#F0EDFA", "#6654A3"),
+        ]
+        for indice, (titulo, valor, fondo, acento) in enumerate(tarjetas):
+            tarjeta = ctk.CTkFrame(
+                resumen, fg_color=fondo, corner_radius=14)
+            tarjeta.grid(row=0, column=indice, sticky="ew",
+                          padx=(0 if indice == 0 else 8, 0), pady=2)
+            ctk.CTkLabel(
+                tarjeta, text=titulo, text_color=COLORES["texto_suave"],
+                font=("Segoe UI", 10), anchor="w").pack(
+                    anchor="w", padx=14, pady=(12, 2))
+            ctk.CTkLabel(
+                tarjeta, text=str(valor), text_color=acento,
+                font=("Segoe UI", 21, "bold"), anchor="w").pack(
+                    anchor="w", padx=14, pady=(0, 12))
+
+        panel_grafico = ctk.CTkFrame(
+            self.contenido, fg_color=COLORES["tarjeta"], corner_radius=14,
+            border_width=1, border_color=COLORES["borde"])
+        panel_grafico.pack(fill="x", pady=(0, 14))
+        ctk.CTkLabel(
+            panel_grafico, text="Estado de tus solicitudes",
+            text_color=COLORES["texto"], font=("Segoe UI", 14, "bold"),
+            anchor="w").pack(anchor="w", padx=16, pady=(12, 2))
+        ctk.CTkLabel(
+            panel_grafico, text="Distribución de los domicilios que has gestionado.",
+            text_color=COLORES["texto_suave"], font=("Segoe UI", 10),
+            anchor="w").pack(anchor="w", padx=16)
+        grafico_fila = ctk.CTkFrame(panel_grafico, fg_color="transparent")
+        grafico_fila.pack(fill="x", padx=14, pady=(4, 10))
+        pastel = tk.Canvas(
+            grafico_fila, width=170, height=150, bg=COLORES["tarjeta"],
+            highlightthickness=0)
+        pastel.pack(side="left", padx=(8, 20))
+        self._dibujar_grafico(pastel, conteos, len(solicitudes))
+        leyenda = ctk.CTkFrame(grafico_fila, fg_color="transparent")
+        leyenda.pack(side="left", fill="both", expand=True)
+        for estado, color in self.ESTADOS.items():
+            fila = ctk.CTkFrame(leyenda, fg_color="transparent")
+            fila.pack(fill="x", pady=2)
+            ctk.CTkLabel(fila, text="●", text_color=color,
+                         font=("Segoe UI", 13)).pack(side="left", padx=(0, 7))
+            ctk.CTkLabel(fila, text=estado, text_color=COLORES["texto_suave"],
+                         font=("Segoe UI", 10)).pack(side="left")
+            ctk.CTkLabel(fila, text=str(conteos[estado]), text_color=COLORES["texto"],
+                         font=("Segoe UI", 10, "bold")).pack(side="right", padx=10)
+
+        encabezado_lista = ctk.CTkFrame(self.contenido, fg_color="transparent")
+        encabezado_lista.pack(fill="x", pady=(0, 7))
+        ctk.CTkLabel(
+            encabezado_lista, text="Entregas finalizadas",
+            text_color=COLORES["texto"], font=("Segoe UI", 16, "bold"),
+            anchor="w").pack(side="left")
+        self.lbl_total_historial = ctk.CTkLabel(
+            encabezado_lista, text="", text_color=COLORES["texto_suave"],
+            font=("Segoe UI", 10))
+        self.lbl_total_historial.pack(side="right")
+        self.busqueda_historial = ctk.CTkEntry(
+            self.contenido, height=36, corner_radius=9,
+            border_color=COLORES["borde"], fg_color=COLORES["tarjeta"],
+            placeholder_text="Buscar por solicitud o destino…")
+        self.busqueda_historial.pack(fill="x", pady=(0, 8))
+        self.busqueda_historial.bind("<KeyRelease>", self._filtrar_historial)
+        self.lista_finalizadas = ctk.CTkScrollableFrame(
+            self.contenido, fg_color=COLORES["fondo"], corner_radius=12,
+            scrollbar_button_color=COLORES["borde"],
+            scrollbar_button_hover_color=COLORES["acento"])
+        self.lista_finalizadas.pack(fill="both", expand=True)
+        self.lista_finalizadas.grid_columnconfigure(0, weight=1)
+        self._filtrar_historial()
+
+    @staticmethod
+    def _dibujar_grafico(canvas, conteos, total):
+        x0, y0, x1, y1 = 15, 8, 145, 138
+        if not total:
+            canvas.create_oval(x0, y0, x1, y1, fill="#E9EEF5", outline="")
+            centro = 0
+        else:
+            inicio = 90
+            for estado, color in PanelHistorialDomiciliario.ESTADOS.items():
+                cantidad = conteos[estado]
+                if cantidad:
+                    extension = 360 * cantidad / total
+                    canvas.create_arc(
+                        x0, y0, x1, y1, start=inicio, extent=extension,
+                        fill=color, outline=COLORES["tarjeta"], width=2,
+                        style=tk.PIESLICE)
+                    inicio -= extension
+            centro = total
+        canvas.create_oval(48, 41, 112, 105, fill=COLORES["tarjeta"], outline="")
+        canvas.create_text(80, 65, text=str(centro), fill=COLORES["texto"],
+                           font=("Segoe UI", 17, "bold"))
+        canvas.create_text(80, 84, text="total", fill=COLORES["texto_suave"],
+                           font=("Segoe UI", 8))
+
+    def _filtrar_historial(self, _evento=None):
+        for widget in self.lista_finalizadas.winfo_children():
+            widget.destroy()
+        texto = normalizar_busqueda(self.busqueda_historial.get())
+        filas = [fila for fila in self.solicitudes
+                 if str(fila.get("estado", "")).casefold() == "finalizada"
+                 and (not texto or texto in normalizar_busqueda(" ".join(
+                     str(fila.get(campo, "")) for campo in
+                     ("numeroSolicitud", "descripcion", "recogida", "fechaCreacion"))))]
+        self.lbl_total_historial.configure(
+            text=f"{len(filas)} entrega(s)" if filas else "")
+        if not filas:
+            mensaje = ("No hay entregas que coincidan con la búsqueda." if texto else
+                       "Tus entregas finalizadas aparecerán aquí.")
+            ctk.CTkLabel(
+                self.lista_finalizadas, text=mensaje, height=70,
+                fg_color=COLORES["tarjeta"], text_color=COLORES["texto_suave"],
+                corner_radius=12).grid(row=0, column=0, sticky="ew", pady=4)
+            return
+        for indice, fila in enumerate(filas):
+            tarjeta = ctk.CTkFrame(
+                self.lista_finalizadas, fg_color=COLORES["tarjeta"],
+                corner_radius=12, border_width=1, border_color=COLORES["borde"])
+            tarjeta.grid(row=indice, column=0, sticky="ew", pady=4)
+            tarjeta.grid_columnconfigure(0, weight=1)
+            ctk.CTkLabel(
+                tarjeta,
+                text=f"Solicitud #{fila['numeroSolicitud']} · {fila.get('descripcion') or 'Domicilio'}",
+                text_color=COLORES["texto"], font=("Segoe UI", 11, "bold"),
+                anchor="w").grid(row=0, column=0, sticky="ew", padx=14, pady=(9, 2))
+            ctk.CTkLabel(
+                tarjeta, text=f"{fila.get('fechaCreacion', '')} · {fila.get('recogida', '')}",
+                text_color=COLORES["texto_suave"], font=("Segoe UI", 10),
+                anchor="w").grid(row=1, column=0, sticky="ew", padx=14, pady=(0, 9))
+            ctk.CTkLabel(
+                tarjeta, text="✓ Finalizada", text_color=self.ESTADOS["Finalizada"],
+                font=("Segoe UI", 10, "bold")).grid(
+                    row=0, column=1, rowspan=2, padx=14)
 
 
 class PanelRegistrarIncidente(PanelBase):
@@ -278,10 +462,14 @@ class PanelRegistrarIncidente(PanelBase):
         self.lbl_contador.grid(row=6, column=0, sticky="e")
         self.ent_desc.bind("<KeyRelease>", self._actualizar_contador, add="+")
 
+        self.lbl_error_incidente = ttk.Label(
+            marco, text="", style="Error.TLabel", wraplength=650)
+        self.lbl_error_incidente.grid(row=7, column=0, sticky="w", pady=(8, 0))
+
         self.btn_registrar = boton_estilizado(
             marco, "Registrar incidente", self._registrar)
         self.btn_registrar.configure(height=44)
-        self.btn_registrar.grid(row=7, column=0, sticky="ew", pady=(20, 0))
+        self.btn_registrar.grid(row=8, column=0, sticky="ew", pady=(12, 0))
 
     def _actualizar_contador(self, _evento=None):
         cantidad = len(self.ent_desc.get())
@@ -298,11 +486,14 @@ class PanelRegistrarIncidente(PanelBase):
     def _registrar(self):
         desc = self.ent_desc.get().strip()
         if not self.cmb_solicitud.get() or not self.cmb_tipo.get() or not desc:
-            messagebox.showwarning("Revisa el formulario", "Completa la solicitud, el tipo y la descripción.")
+            self.lbl_error_incidente.configure(
+                text="Completa la solicitud, el tipo de incidente y la descripción.")
             return
         if len(desc) > 50:
-            messagebox.showwarning("Revisa el formulario", "La descripción admite máximo 50 caracteres.")
+            self.lbl_error_incidente.configure(
+                text="La descripción admite máximo 50 caracteres.")
             return
+        self.lbl_error_incidente.configure(text="")
         numero = self.solicitudes[self.cmb_solicitud.get()]
         id_tipo = self.tipos[self.cmb_tipo.get()]
         self.btn_registrar.configure(state="disabled", text="Registrando…")
@@ -325,4 +516,4 @@ class PanelRegistrarIncidente(PanelBase):
 
     def _fallo_registro(self, error):
         self.btn_registrar.configure(state="normal", text="Registrar incidente")
-        messagebox.showerror("No se pudo registrar el incidente", str(error))
+        self.lbl_error_incidente.configure(text=f"No se pudo registrar: {error}")

@@ -1,6 +1,18 @@
+import os
+import sys
+import tkinter as tk
+from pathlib import Path
+
 import customtkinter as ctk
+from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageTk
 
 from interfaces.estilos import COLORES
+
+
+def _ruta_recurso(nombre):
+    """Encuentra recursos tanto al ejecutar Python como dentro del .exe."""
+    raiz = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
+    return raiz / "imagenes" / nombre
 
 
 class PantallaInicio(ctk.CTkFrame):
@@ -13,27 +25,35 @@ class PantallaInicio(ctk.CTkFrame):
         hero.pack(side="left", fill="both", expand=True, padx=(28, 14), pady=28)
         hero.columnconfigure(0, weight=1)
 
-        ctk.CTkLabel(
-            hero, text="🛵", font=("Segoe UI Emoji", 74),
-            text_color="#F58220").pack(anchor="w", padx=48, pady=(58, 10))
-        ctk.CTkLabel(
-            hero, text="DOMIYA", text_color="#FFFFFF",
-            font=("Segoe UI", 40, "bold")).pack(anchor="w", padx=48)
-        ctk.CTkLabel(
-            hero, text="Domicilios en Cali", text_color="#F8A34E",
-            font=("Segoe UI", 20, "bold")).pack(anchor="w", padx=50, pady=(0, 22))
-        ctk.CTkLabel(
-            hero, text="Rápido  •  Seguro  •  Confiable",
-            text_color="#D8E2F0", font=("Segoe UI", 15)).pack(
-                anchor="w", padx=50)
-        ctk.CTkLabel(
-            hero, text="Conectamos a Cali con lo que necesitas.",
-            text_color="#AFC1D8", font=("Segoe UI", 12)).pack(
-                anchor="w", padx=50, pady=(8, 0))
-        ctk.CTkLabel(
-            hero, text="Santiago de Cali  ·  Colombia",
-            text_color="#93A9C5", font=("Segoe UI", 10)).pack(
-                side="bottom", anchor="w", padx=32, pady=24)
+        try:
+            self._foto_original = Image.open(
+                _ruta_recurso("entrecali_fondo.jpg")).convert("RGB")
+            self._fondo = tk.Label(
+                hero, borderwidth=0, highlightthickness=0,
+                background=COLORES["menu"])
+            self._fondo.place(x=0, y=0, relwidth=1, relheight=1)
+            hero.bind("<Configure>", self._ajustar_fondo, add="+")
+            self.after_idle(self._ajustar_fondo)
+        except (OSError, ValueError):
+            self._foto_original = None
+            self._imagen_fondo = None
+
+        try:
+            logo = Image.open(_ruta_recurso("entrecali_logo.png")).convert("RGBA")
+            self._imagen_logo = ctk.CTkImage(
+                light_image=logo, dark_image=logo, size=(390, 69))
+            tarjeta_logo = ctk.CTkFrame(
+                hero, fg_color="#FFFFFF", corner_radius=14)
+            tarjeta_logo.pack(anchor="w", padx=38, pady=(48, 0))
+            ctk.CTkLabel(
+                tarjeta_logo, text="", image=self._imagen_logo,
+                fg_color="#FFFFFF").pack(padx=15, pady=10)
+        except (OSError, ValueError):
+            self._imagen_logo = None
+            ctk.CTkLabel(
+                hero, text="EntreCali", text_color="#FFFFFF",
+                fg_color="transparent", font=("Segoe UI", 38, "bold")).pack(
+                    anchor="w", padx=48, pady=(58, 10))
 
         acceso = ctk.CTkFrame(self, fg_color="transparent", width=420)
         acceso.pack(side="right", fill="y", padx=(14, 28), pady=28)
@@ -78,3 +98,43 @@ class PantallaInicio(ctk.CTkFrame):
                 fg_color=COLORES["acento"], hover_color="#E66F10",
                 font=("Segoe UI", 11, "bold"), command=accion).pack(
                     side="right", padx=14, pady=14)
+
+    def _ajustar_fondo(self, _evento=None):
+        if self._foto_original is None or not self.winfo_exists():
+            return
+        ancho = max(self._fondo.winfo_width(), 1)
+        alto = max(self._fondo.winfo_height(), 1)
+        if ancho < 2 or alto < 2:
+            return
+        foto = ImageOps.fit(
+            self._foto_original, (ancho, alto),
+            method=Image.Resampling.LANCZOS, centering=(0.5, 0.5)).convert("RGBA")
+        escala = alto / 730
+        ruta_fuentes = Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts"
+        try:
+            titulo = ImageFont.truetype(str(ruta_fuentes / "segoeuib.ttf"), max(18, int(27 * escala)))
+            cuerpo = ImageFont.truetype(str(ruta_fuentes / "segoeui.ttf"), max(12, int(15 * escala)))
+            detalle = ImageFont.truetype(str(ruta_fuentes / "segoeuib.ttf"), max(11, int(12 * escala)))
+            pie = ImageFont.truetype(str(ruta_fuentes / "segoeui.ttf"), max(9, int(10 * escala)))
+        except OSError:
+            titulo = cuerpo = detalle = pie = ImageFont.load_default()
+        dibujo = ImageDraw.Draw(foto)
+        x = int(50 * escala)
+        sombra = (12, 29, 55, 180)
+        dibujo.text((x, int(190 * escala)), "Cali se mueve contigo",
+                    font=titulo, fill="#FFFFFF", stroke_width=1, stroke_fill=sombra)
+        dibujo.text((x + 2, int(237 * escala)),
+                    "Comercios, pedidos y domicilios en un mismo lugar.",
+                    font=cuerpo, fill="#F2F6FC", stroke_width=1, stroke_fill=sombra)
+        dibujo.text((x + 2, int(280 * escala)),
+                    "Rápido  ·  Cercano  ·  Hecho para Cali",
+                    font=detalle, fill="#FFD09C", stroke_width=1, stroke_fill=sombra)
+        dibujo.text((int(32 * escala), alto - int(39 * escala)),
+                    "Santiago de Cali  ·  Colombia", font=pie,
+                    fill="#F2F6FC", stroke_width=1, stroke_fill=sombra)
+        mascara = Image.new("L", (ancho, alto), 0)
+        ImageDraw.Draw(mascara).rounded_rectangle(
+            (0, 0, ancho - 1, alto - 1), radius=24, fill=255)
+        foto.putalpha(mascara)
+        self._imagen_fondo = ImageTk.PhotoImage(foto)
+        self._fondo.configure(image=self._imagen_fondo)

@@ -4,6 +4,7 @@ import customtkinter as ctk
 from interfaces.componentes import ejecutar_en_segundo_plano
 from interfaces.estilos import COLORES
 from operaciones import cliente as operaciones_cliente
+from operaciones.estado_local import marcar_incidentes_leidos
 
 
 class PopupIncidentes(ctk.CTkToplevel):
@@ -86,6 +87,9 @@ class PopupIncidentes(ctk.CTkToplevel):
         self._mostrar_estado_vacio(f"Error al consultar los incidentes: {error}")
 
     def _mostrar_incidentes(self, incidentes):
+        marcar_incidentes_leidos(self.identificacion, incidentes)
+        if self.parent_panel.winfo_exists():
+            self.parent_panel._actualizar_dot_incidentes(incidentes)
         self.lbl_total.configure(
             text=f"{len(incidentes)} incidente(s) reportado(s)")
         if not incidentes:

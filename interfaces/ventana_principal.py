@@ -17,7 +17,7 @@ class VentanaPrincipal(ctk.CTk):
         ctk.set_default_color_theme("blue")
         ctk.set_widget_scaling(1.08)
         super().__init__()
-        self.title("DOMIYA · Domicilios en Cali")
+        self.title("EntreCali · Domicilios en Cali")
         ancho = min(1366, self.winfo_screenwidth() - 40)
         alto = min(820, self.winfo_screenheight() - 80)
         posicion_x = max((self.winfo_screenwidth() - ancho) // 2, 0)
@@ -76,6 +76,7 @@ class VentanaPrincipal(ctk.CTk):
 
     def _reemplazar(self, clase, **kwargs):
         """Destruye lo que se muestra y crea la nueva pantalla"""
+        self._cerrar_popup_incidentes()
         if self._actual is not None:
             self._actual.destroy()
         self._actual = clase(self.area, ventana=self, **kwargs)
@@ -98,7 +99,18 @@ class VentanaPrincipal(ctk.CTk):
         self.mostrar_modulo(MENUS[rol][0][0])
 
     def cerrar_sesion(self):
+        self._cerrar_popup_incidentes()
         self.mostrar_inicio()
+
+    def _cerrar_popup_incidentes(self):
+        popup = getattr(self, "_popup_incidentes", None)
+        self._popup_incidentes = None
+        if popup is not None:
+            try:
+                if popup.winfo_exists():
+                    popup.destroy()
+            except tk.TclError:
+                pass
 
     def abrir_perfil(self):
         if not self.sesion:
@@ -151,7 +163,7 @@ class VentanaPrincipal(ctk.CTk):
         marca = ctk.CTkFrame(self.menu, fg_color="transparent")
         marca.pack(fill="x", padx=20, pady=(24, 20))
         ctk.CTkLabel(
-            marca, text="🛵  DOMIYA", text_color="#FFFFFF",
+            marca, text="EntreCali", text_color="#FFFFFF",
             font=("Segoe UI", 21, "bold")).pack(anchor="w")
         ctk.CTkLabel(
             marca, text="Domicilios en Cali", text_color="#F8A34E",
@@ -162,11 +174,11 @@ class VentanaPrincipal(ctk.CTk):
         self._perfil_frame = perfil
         perfil.pack(fill="x", padx=14, pady=(0, 22))
         inicial = (self.sesion["nombre"] or TITULOS_ROL[rol])[0].upper()
-        ctk.CTkLabel(
+        self.lbl_avatar = ctk.CTkLabel(
             perfil, text=inicial, width=42, height=42, corner_radius=21,
             fg_color="#F58220", text_color="#FFFFFF",
-            font=("Segoe UI", 18, "bold")).pack(
-                side="left", padx=12, pady=12)
+            font=("Segoe UI", 18, "bold"))
+        self.lbl_avatar.pack(side="left", padx=12, pady=12)
         detalle = ctk.CTkFrame(perfil, fg_color="transparent")
         detalle.pack(side="left", fill="x", expand=True, padx=(0, 8))
         self.lbl_nombre_perfil = ctk.CTkLabel(
