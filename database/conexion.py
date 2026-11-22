@@ -8,30 +8,11 @@ class ErrorBD(Exception):
     """Error de base de datos con un mensaje legible (incluye los SIGNAL de los triggers)."""
 
 
-def mensaje_error_mysql(error):
-    """Traduce errores comunes de MySQL a mensajes útiles para la demo."""
-    numero = getattr(error, "errno", None)
-    mensaje = str(getattr(error, "msg", error))
-    if numero == 1062:
-        if "correo" in mensaje.casefold() or "email" in mensaje.casefold():
-            return "Ese correo electrónico ya está registrado. Prueba con otro."
-        return "Ya existe un registro con esos datos. Verifica la identificación."
-    mensajes = {
-        1048: "Falta completar un dato obligatorio. Revisa los campos e inténtalo de nuevo.",
-        1406: "Uno de los datos supera la longitud permitida. Acórtalo e inténtalo de nuevo.",
-        1451: "No se puede eliminar este registro porque tiene información relacionada.",
-        1452: "Una opción seleccionada ya no está disponible. Actualiza la pantalla e inténtalo de nuevo.",
-        1205: "La base de datos está ocupada. Espera un momento e inténtalo de nuevo.",
-        1213: "La operación coincidió con otra actualización. Inténtalo nuevamente.",
-    }
-    return mensajes.get(numero, mensaje)
-
-
 def obtener_conexion():
     try:
         return mysql.connector.connect(charset="utf8mb4", **DB_CONFIG)
     except Error as e:
-        raise ErrorBD(f"No se pudo conectar a MySQL: {mensaje_error_mysql(e)}") from e
+        raise ErrorBD(f"No se pudo conectar a MySQL: {e.msg}") from e
 
 
 def ejecutar_consulta(sql, params=None):
@@ -43,7 +24,7 @@ def ejecutar_consulta(sql, params=None):
         cursor.close()
         return filas
     except Error as e:
-        raise ErrorBD(mensaje_error_mysql(e)) from e
+        raise ErrorBD(e.msg) from e
     finally:
         conexion.close()
 
@@ -59,7 +40,7 @@ def ejecutar_comando(sql, params=None):
         return afectadas
     except Error as e:
         conexion.rollback()
-        raise ErrorBD(mensaje_error_mysql(e)) from e
+        raise ErrorBD(e.msg) from e
     finally:
         conexion.close()
 
@@ -78,7 +59,7 @@ def llamar_procedimiento(nombre, args=()):
         return resultados
     except Error as e:
         conexion.rollback()
-        raise ErrorBD(mensaje_error_mysql(e)) from e
+        raise ErrorBD(e.msg) from e
     finally:
         conexion.close()
 

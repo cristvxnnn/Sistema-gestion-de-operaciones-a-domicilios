@@ -1,8 +1,7 @@
 """Operaciones de ingreso y registro de clientes y domiciliarios."""
 import mysql.connector
 
-from database.conexion import (ErrorBD, ejecutar_consulta, obtener_conexion,
-                               mensaje_error_mysql)
+from database.conexion import ErrorBD, ejecutar_consulta, obtener_conexion
 
 
 def buscar_cliente(identificacion):
@@ -87,68 +86,55 @@ def actualizar_perfil(datos):
         raise
     except mysql.connector.Error as e:
         conexion.rollback()
-        if e.errno == 1062:
-            raise ErrorBD(
-                "Ese correo electrónico ya está registrado por otra persona.") from e
-        raise ErrorBD(mensaje_error_mysql(e)) from e
+        raise ErrorBD(e.msg) from e
     finally:
         if cursor is not None:
             cursor.close()
         conexion.close()
 
 
-def eliminar_cuenta(identificacion, rol):
-    """Elimina solo el rol activo y conserva los demás roles del usuario."""
+def eliminar_cuenta(identificacion):
+    """Elimina una cuenta y sus solicitudes como cliente de forma transaccional."""
     conexion = obtener_conexion()
     cursor = None
     try:
         cursor = conexion.cursor()
-        if rol == "cliente":
-            cursor.execute(
-                "SELECT numeroSolicitud FROM solicitud "
-                "WHERE identificacionCliente = %s",
-                (identificacion,))
-            solicitudes = [fila[0] for fila in cursor.fetchall()]
-            if solicitudes:
-                marcadores = ", ".join(["%s"] * len(solicitudes))
-                cursor.execute(
-                    f"DELETE FROM incidente WHERE numeroSolicitud IN ({marcadores})",
-                    tuple(solicitudes))
-                cursor.execute(
-                    f"DELETE FROM solicitud WHERE numeroSolicitud IN ({marcadores})",
-                    tuple(solicitudes))
-            cursor.execute("DELETE FROM cliente WHERE identificacion = %s",
-                           (identificacion,))
-        elif rol == "domiciliario":
-            cursor.execute(
-                "SELECT COUNT(*) FROM solicitud "
-                "WHERE identificacionDomiciliario = %s",
-                (identificacion,))
-            if cursor.fetchone()[0]:
-                raise ErrorBD(
-                    "No se puede eliminar el rol de domiciliario porque hay "
-                    "solicitudes asociadas a esta identificación.")
-            cursor.execute("DELETE FROM domiciliario WHERE identificacion = %s",
-                           (identificacion,))
-        else:
-            raise ErrorBD("No se reconoce el rol activo para eliminarlo.")
-
-        # El usuario compartido solo se elimina si ya no conserva ningún rol.
         cursor.execute(
-            "SELECT EXISTS(SELECT 1 FROM cliente WHERE identificacion = %s) "
-            "OR EXISTS(SELECT 1 FROM domiciliario WHERE identificacion = %s)",
-            (identificacion, identificacion))
-        conserva_otro_rol = bool(cursor.fetchone()[0])
-        if not conserva_otro_rol:
-            cursor.execute("DELETE FROM usuario WHERE identificacion = %s",
-                           (identificacion,))
+            "SELECT COUNT(*) FROM solicitud "
+            "WHERE identificacionDomiciliario = %s",
+            (identificacion,))
+        if cursor.fetchone()[0]:
+            raise ErrorBD(
+                "No puedes eliminar la cuenta mientras tengas solicitudes "
+                "asignadas como domiciliario.")
+
+        cursor.execute(
+            "SELECT numeroSolicitud FROM solicitud "
+            "WHERE identificacionCliente = %s",
+            (identificacion,))
+        solicitudes = [fila[0] for fila in cursor.fetchall()]
+        if solicitudes:
+            marcadores = ", ".join(["%s"] * len(solicitudes))
+            cursor.execute(
+                f"DELETE FROM incidente WHERE numeroSolicitud IN ({marcadores})",
+                tuple(solicitudes))
+            cursor.execute(
+                f"DELETE FROM solicitud WHERE numeroSolicitud IN ({marcadores})",
+                tuple(solicitudes))
+
+        cursor.execute("DELETE FROM cliente WHERE identificacion = %s",
+                       (identificacion,))
+        cursor.execute("DELETE FROM domiciliario WHERE identificacion = %s",
+                       (identificacion,))
+        cursor.execute("DELETE FROM usuario WHERE identificacion = %s",
+                       (identificacion,))
         conexion.commit()
     except ErrorBD:
         conexion.rollback()
         raise
     except mysql.connector.Error as e:
         conexion.rollback()
-        raise ErrorBD(mensaje_error_mysql(e)) from e
+        raise ErrorBD(e.msg) from e
     finally:
         if cursor is not None:
             cursor.close()
@@ -203,7 +189,7 @@ def registrar_cliente(d):
         raise
     except mysql.connector.Error as e:
         conexion.rollback()
-        raise ErrorBD(mensaje_error_mysql(e)) from e
+        raise ErrorBD(e.msg) from e
     finally:
         if cursor is not None:
             cursor.close()
@@ -254,7 +240,7 @@ def registrar_domiciliario(d):
         raise
     except mysql.connector.Error as e:
         conexion.rollback()
-        raise ErrorBD(mensaje_error_mysql(e)) from e
+        raise ErrorBD(e.msg) from e
     finally:
         if cursor is not None:
             cursor.close()

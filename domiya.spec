@@ -1,4 +1,4 @@
-# PyInstaller recipe for a Windows folder distribution (onedir).
+# PyInstaller recipe for a windowed, single-file Windows executable.
 from pathlib import Path
 from PyInstaller.utils.hooks import collect_all
 
@@ -31,13 +31,14 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
+    a.binaries,
+    a.datas,
     [],
-    exclude_binaries=True,
-    name="EntreCali",
+    name="DOMIYA",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=False,
+    upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,
@@ -46,12 +47,4 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-)
-coll = COLLECT(
-    exe,
-    a.binaries,
-    a.datas,
-    strip=False,
-    upx=False,
-    name="EntreCali",
 )

@@ -103,10 +103,6 @@ class PantallaAcceso(ctk.CTkFrame):
         self.ent_ingreso.pack(padx=40, pady=(6, 16))
         limitar_campo(self.ent_ingreso, MAX_IDENTIFICACION, solo_numeros=True)
         self.ent_ingreso.bind("<Return>", lambda e: self._ingresar())
-        self.lbl_error_ingreso = ctk.CTkLabel(
-            formulario, text="", text_color="#B42318", font=("Segoe UI", 10),
-            anchor="w", wraplength=400)
-        self.lbl_error_ingreso.pack(fill="x", padx=40, pady=(0, 6))
         ctk.CTkButton(
             formulario, text="Ingresar  →", width=400, height=46,
             corner_radius=10, fg_color=COLORES["acento"],
@@ -117,20 +113,19 @@ class PantallaAcceso(ctk.CTkFrame):
         texto = self.ent_ingreso.get().strip()
         error_identificacion = validar_identificacion(texto)
         if error_identificacion:
-            self.lbl_error_ingreso.configure(text=error_identificacion)
+            messagebox.showwarning("Identificación no válida", error_identificacion)
             return
-        self.lbl_error_ingreso.configure(text="")
         try:
             if self.rol == "cliente":
                 usuario = buscar_cliente(int(texto))
             else:
                 usuario = buscar_domiciliario(int(texto))
         except ErrorBD as e:
-            self.lbl_error_ingreso.configure(text=str(e))
+            messagebox.showerror("Error de base de datos", str(e))
             return
         if usuario is None:
-            self.lbl_error_ingreso.configure(
-                text="No encontramos esa identificación. Puedes registrarte en la pestaña «Registrarme».")
+            messagebox.showinfo("No registrado",
+                                "No encontramos esa identificación. Puedes registrarte en la otra pestaña.")
             return
         self.ventana.iniciar_sesion(self.rol, usuario["identificacion"], usuario["nombre"])
 
@@ -183,20 +178,15 @@ class PantallaAcceso(ctk.CTkFrame):
             font=("Segoe UI", 10), anchor="w")
         self.etiqueta_autocompletar.grid(
             row=filas, column=0, columnspan=2, sticky="w", padx=18, pady=(5, 0))
-        self.lbl_error_registro = ctk.CTkLabel(
-            formulario, text="", text_color="#B42318", font=("Segoe UI", 10),
-            anchor="w", wraplength=650)
-        self.lbl_error_registro.grid(
-            row=filas + 1, column=0, columnspan=2, sticky="w", padx=18, pady=(4, 0))
 
-        fila_boton = filas + 2
+        fila_boton = filas + 1
         if self.rol == "cliente":
             ctk.CTkLabel(
                 formulario,
                 text="Si tu barrio no aparece, todavía no tenemos cobertura allí.",
                 text_color=COLORES["texto_suave"],
                 font=("Segoe UI", 10)).grid(
-                    row=filas + 2, column=0, columnspan=2,
+                    row=filas + 1, column=0, columnspan=2,
                     sticky="w", padx=18, pady=(5, 0))
             fila_boton += 1
         ctk.CTkButton(
@@ -209,16 +199,8 @@ class PantallaAcceso(ctk.CTkFrame):
 
     def _autocompletar_usuario(self, _evento=None):
         identificacion = self.widgets["identificacion"].get().strip()
-        identificacion_anterior = getattr(self, "_identificacion_autocompletada", None)
-        if identificacion != identificacion_anterior:
-            for campo in ("nombre", "apellidoPaterno", "apellidoMaterno", "telefono", "correo"):
-                widget = self.widgets.get(campo)
-                if widget is not None:
-                    widget.delete(0, "end")
-            self._identificacion_autocompletada = None
-            self.etiqueta_autocompletar.configure(text="")
-
         if not identificacion or not identificacion.isdigit():
+            self.etiqueta_autocompletar.configure(text="")
             return
         error_identificacion = validar_identificacion(identificacion)
         if error_identificacion:
@@ -241,7 +223,6 @@ class PantallaAcceso(ctk.CTkFrame):
             if widget is not None:
                 widget.delete(0, "end")
                 widget.insert(0, str(usuario.get(campo) or ""))
-        self._identificacion_autocompletada = identificacion
         self.etiqueta_autocompletar.configure(
             text="Datos encontrados. Completamos tu información personal.")
 
@@ -292,16 +273,15 @@ class PantallaAcceso(ctk.CTkFrame):
         try:
             datos = self._leer_formulario()
         except ValueError as e:
-            self.lbl_error_registro.configure(text=str(e))
+            messagebox.showwarning("Revisa el formulario", str(e))
             return
-        self.lbl_error_registro.configure(text="")
         try:
             if self.rol == "cliente":
                 registrar_cliente(datos)
             else:
                 registrar_domiciliario(datos)
         except ErrorBD as e:
-            self.lbl_error_registro.configure(text=str(e))
+            messagebox.showerror("No se pudo registrar", str(e))
             return
         messagebox.showinfo("Registro exitoso", f"Bienvenido(a), {datos['nombre']}.")
         self.ventana.iniciar_sesion(self.rol, datos["identificacion"], datos["nombre"])

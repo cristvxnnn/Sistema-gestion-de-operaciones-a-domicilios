@@ -8,7 +8,6 @@ from urllib.request import urlopen
 
 from database.conexion import ErrorBD
 from interfaces.panel_base import PanelBase
-from interfaces.estilos import COLORES
 from interfaces.componentes import (
     TablaDatos, tarjeta_indicador, mostrar_error, limitar_campo,
     combo_estilizado, boton_estilizado, entrada_estilizada, entrada_busqueda,
@@ -40,8 +39,7 @@ class PanelResumenCliente(PanelBase):
 
     @staticmethod
     def _consultar(id_cliente):
-        return (op.resumen_por_estado(id_cliente), op.total_gastado(id_cliente),
-                op.listar_solicitudes(id_cliente))
+        return op.resumen_por_estado(id_cliente), op.total_gastado(id_cliente)
 
     def _fallo_resumen(self, error):
         self.lbl_cargando.destroy()
@@ -49,56 +47,20 @@ class PanelResumenCliente(PanelBase):
 
     def _mostrar_resumen(self, resultado):
         self.lbl_cargando.destroy()
-        estados, gastado, solicitudes = resultado
+        estados, gastado = resultado
 
         indicadores = [("Total de solicitudes", sum(f["total"] for f in estados))]
         indicadores += [(f["estado"], f["total"]) for f in estados]
         indicadores.append(("Gastado en finalizadas", f"${gastado:,.0f}"))
 
-        rejilla = ctk.CTkFrame(
-            self.contenido, fg_color=COLORES["fondo"], corner_radius=12)
-        rejilla.pack(fill="x", pady=(0, 16))
-        for columna in range(4):
-            rejilla.grid_columnconfigure(columna, weight=1, uniform="historial")
-        paleta = ["#EAF2FF", "#E9F7EF", "#FFF4E8", "#F2EDFF"]
-        for indice, (titulo, valor) in enumerate(indicadores):
-            tarjeta = ctk.CTkFrame(
-                rejilla, fg_color=paleta[indice % len(paleta)], corner_radius=14)
-            tarjeta.grid(row=indice // 4, column=indice % 4, sticky="ew",
-                          padx=(0 if indice % 4 == 0 else 8, 0), pady=2)
-            ctk.CTkLabel(tarjeta, text=titulo, text_color=COLORES["texto_suave"],
-                         font=("Segoe UI", 11), anchor="w").pack(anchor="w", padx=16, pady=(13, 2))
-            ctk.CTkLabel(tarjeta, text=str(valor), text_color=COLORES["texto"],
-                         font=("Segoe UI", 21, "bold"), anchor="w").pack(anchor="w", padx=16, pady=(0, 13))
-
-        ctk.CTkLabel(self.contenido, text="Actividad reciente",
-                     text_color=COLORES["texto"], font=("Segoe UI", 17, "bold"),
-                     anchor="w").pack(fill="x", pady=(0, 8))
-        lista = ctk.CTkScrollableFrame(
-            self.contenido, fg_color=COLORES["fondo"], corner_radius=12,
-            scrollbar_button_color=COLORES["borde"],
-            scrollbar_button_hover_color=COLORES["acento"])
-        lista.pack(fill="both", expand=True, padx=0, pady=0)
-        lista.grid_columnconfigure(0, weight=1)
-        if not solicitudes:
-            ctk.CTkLabel(lista, text="Aún no tienes solicitudes. Cuando crees una, aparecerá aquí.",
-                         text_color=COLORES["texto_suave"], fg_color=COLORES["tarjeta"],
-                         corner_radius=12, height=74).grid(row=0, column=0, sticky="ew", pady=4)
-            return
-        for indice, fila in enumerate(solicitudes[:8]):
-            tarjeta = ctk.CTkFrame(lista, fg_color=COLORES["tarjeta"], corner_radius=12,
-                                   border_width=1, border_color=COLORES["borde"])
-            tarjeta.grid(row=indice, column=0, sticky="ew", pady=4)
-            tarjeta.grid_columnconfigure(0, weight=1)
-            ctk.CTkLabel(tarjeta, text=f"Solicitud #{fila['numeroSolicitud']} · {fila.get('descripcion') or 'Domicilio'}",
-                         text_color=COLORES["texto"], font=("Segoe UI", 12, "bold"), anchor="w").grid(
-                             row=0, column=0, sticky="ew", padx=14, pady=(10, 2))
-            ctk.CTkLabel(tarjeta, text=f"{fila.get('fechaCreacion', '')} · {fila.get('recogida', '')}",
-                         text_color=COLORES["texto_suave"], font=("Segoe UI", 10), anchor="w").grid(
-                             row=1, column=0, sticky="ew", padx=14, pady=(0, 10))
-            ctk.CTkLabel(tarjeta, text=f"{fila.get('estado', '')}  ·  ${fila.get('montoTotal', 0):,.0f}",
-                         text_color=COLORES["acento"], font=("Segoe UI", 11, "bold")).grid(
-                             row=0, column=1, rowspan=2, padx=14)
+        rejilla = ttk.Frame(self.contenido, style="Contenido.TFrame")
+        rejilla.pack(fill="x")
+        tarjetas = [tarjeta_indicador(rejilla, titulo, valor)
+                    for titulo, valor in indicadores]
+        rejilla.bind(
+            "<Configure>",
+            lambda evento: grilla_responsiva(rejilla, tarjetas, evento.width))
+        self.after_idle(lambda: grilla_responsiva(rejilla, tarjetas, rejilla.winfo_width()))
 
 
 class PanelMisSolicitudes(PanelBase):
@@ -333,13 +295,8 @@ class PanelNuevaSolicitud(PanelBase):
             style="TarjetaTexto.TLabel").grid(
                 row=4, column=0, columnspan=2, sticky="w", pady=(3, 6))
 
-        self.lbl_error_solicitud = ttk.Label(
-            marco, text="", style="Error.TLabel", wraplength=650)
-        self.lbl_error_solicitud.grid(row=6, column=0, columnspan=2,
-                                      sticky="w", pady=(12, 0))
-        self.btn_crear_solicitud = boton_estilizado(
-            marco, "Crear solicitud", self._crear)
-        self.btn_crear_solicitud.grid(row=7, column=0, sticky="w", pady=(8, 0))
+        boton_estilizado(marco, "Crear solicitud", self._crear).grid(
+            row=6, column=0, sticky="w", pady=(18, 0))
 
     def _cambiar_tipo(self, _evento=None):
         self.marco_est.grid_remove()
@@ -401,7 +358,7 @@ class PanelNuevaSolicitud(PanelBase):
         self._imagen_actual = url
         self._imagen_tk = None
         if Image is None or ImageTk is None:
-            self.lbl_imagen.configure(image="", text="Vista previa no disponible")
+            self.lbl_imagen.configure(image="", text=f"Imagen: {url}")
             return
         self.lbl_imagen.configure(image="", text="Cargando imagen...")
 
@@ -526,20 +483,12 @@ class PanelNuevaSolicitud(PanelBase):
         try:
             datos = self._leer()
         except ValueError as e:
-            self.lbl_error_solicitud.configure(text=str(e))
+            messagebox.showwarning("Revisa el formulario", str(e))
             return
-        self.lbl_error_solicitud.configure(text="")
-        self.btn_crear_solicitud.configure(state="disabled", text="Creando solicitud…")
-        ejecutar_en_segundo_plano(
-            self, lambda: op.crear_solicitud(
-                self.ventana.sesion["identificacion"], datos),
-            self._solicitud_creada, self._fallo_crear_solicitud)
-
-    def _solicitud_creada(self, numero):
-        messagebox.showinfo(
-            "Solicitud creada", f"Tu solicitud quedó registrada con el número {numero}.")
+        try:
+            numero = op.crear_solicitud(self.ventana.sesion["identificacion"], datos)
+        except ErrorBD as e:
+            messagebox.showerror("No se pudo crear la solicitud", str(e))
+            return
+        messagebox.showinfo("Solicitud creada", f"Tu solicitud quedó registrada con el número {numero}.")
         self.ventana.mostrar_modulo("mis_solicitudes")
-
-    def _fallo_crear_solicitud(self, error):
-        self.btn_crear_solicitud.configure(state="normal", text="Crear solicitud")
-        self.lbl_error_solicitud.configure(text=f"No se pudo crear la solicitud: {error}")
