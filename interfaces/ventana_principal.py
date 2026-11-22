@@ -17,7 +17,7 @@ class VentanaPrincipal(ctk.CTk):
         ctk.set_default_color_theme("blue")
         ctk.set_widget_scaling(1.08)
         super().__init__()
-        self.title("DOMIYA · Domicilios en Cali")
+        self.title("EntreCali · Domicilios en Cali")
         ancho = min(1366, self.winfo_screenwidth() - 40)
         alto = min(820, self.winfo_screenheight() - 80)
         posicion_x = max((self.winfo_screenwidth() - ancho) // 2, 0)
@@ -163,7 +163,7 @@ class VentanaPrincipal(ctk.CTk):
         marca = ctk.CTkFrame(self.menu, fg_color="transparent")
         marca.pack(fill="x", padx=20, pady=(24, 20))
         ctk.CTkLabel(
-            marca, text="🛵  DOMIYA", text_color="#FFFFFF",
+            marca, text="EntreCali", text_color="#FFFFFF",
             font=("Segoe UI", 21, "bold")).pack(anchor="w")
         ctk.CTkLabel(
             marca, text="Domicilios en Cali", text_color="#F8A34E",
