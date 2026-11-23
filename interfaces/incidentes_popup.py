@@ -1,4 +1,5 @@
 """Ventana emergente del historial de incidentes del cliente."""
+import tkinter as tk
 import customtkinter as ctk
 
 from interfaces.componentes import ejecutar_en_segundo_plano
@@ -7,19 +8,18 @@ from operaciones import cliente as operaciones_cliente
 
 
 class PopupIncidentes(ctk.CTkToplevel):
-    ANCHO = 440
-    ALTO = 560
+    ANCHO = 560
+    ALTO = 640
 
     def __init__(self, parent, identificacion):
         super().__init__(parent.winfo_toplevel())
         self.parent_panel = parent
+        self.ventana_principal = parent.winfo_toplevel()
         self.identificacion = identificacion
         self.title("Incidentes")
         self.configure(fg_color=COLORES["fondo"])
         self.resizable(False, False)
-        self.transient(parent.winfo_toplevel())
-        self.overrideredirect(True)
-        self._posicionar(parent.btn_incidentes)
+        self.transient(self.ventana_principal)
 
         contenedor = ctk.CTkFrame(
             self, fg_color=COLORES["tarjeta"], corner_radius=16,
@@ -45,7 +45,7 @@ class PopupIncidentes(ctk.CTkToplevel):
             encabezado, text="×", width=30, height=30, corner_radius=9,
             fg_color="transparent", hover_color=COLORES["acento_claro"],
             text_color=COLORES["texto_suave"], font=("Segoe UI", 18),
-            command=self.destroy).grid(row=0, column=2, rowspan=2, padx=(8, 0))
+            command=self.cerrar).grid(row=0, column=2, rowspan=2, padx=(8, 0))
 
         ctk.CTkFrame(
             contenedor, height=1, fg_color=COLORES["borde"],
@@ -60,26 +60,45 @@ class PopupIncidentes(ctk.CTkToplevel):
         self.lista.pack(fill="both", expand=True, padx=12, pady=(0, 12))
         self.lista.grid_columnconfigure(0, weight=1)
 
-        self.bind("<Escape>", lambda _evento: self.destroy())
+        self.protocol("WM_DELETE_WINDOW", self.cerrar)
+        self.bind("<Escape>", lambda _evento: self.cerrar())
         parent.bind("<Destroy>", self._cerrar_con_panel, add="+")
+        self._posicionar()
+        self.grab_set()
+        self.focus_force()
         ejecutar_en_segundo_plano(
             self,
             lambda: operaciones_cliente.listar_incidentes(self.identificacion),
             self._mostrar_incidentes, self._mostrar_error)
 
     def _cerrar_con_panel(self, evento):
-        if evento.widget is self.parent_panel and self.winfo_exists():
-            self.destroy()
+        if evento.widget is self.parent_panel:
+            self.cerrar()
 
-    def _posicionar(self, boton):
+    def _posicionar(self):
         self.update_idletasks()
-        x_objetivo = boton.winfo_rootx() + boton.winfo_width() - self.ANCHO
-        y_objetivo = boton.winfo_rooty() + boton.winfo_height() + 8
-        x = max(8, min(x_objetivo, self.winfo_screenwidth() - self.ANCHO - 8))
-        y = min(y_objetivo, self.winfo_screenheight() - self.ALTO - 48)
-        self.geometry(f"{self.ANCHO}x{self.ALTO}+{x}+{max(8, y)}")
+        ventana = self.ventana_principal
+        ventana.update_idletasks()
+        x = ventana.winfo_rootx() + (ventana.winfo_width() - self.ANCHO) // 2
+        y = ventana.winfo_rooty() + (ventana.winfo_height() - self.ALTO) // 2
+        x = max(8, min(x, self.winfo_screenwidth() - self.ANCHO - 8))
+        y = max(8, min(y, self.winfo_screenheight() - self.ALTO - 48))
+        self.geometry(f"{self.ANCHO}x{self.ALTO}+{x}+{y}")
         self.lift()
-        self.focus_force()
+
+    def cerrar(self):
+        try:
+            if not self.winfo_exists():
+                return
+        except tk.TclError:
+            return
+        try:
+            self.grab_release()
+        except tk.TclError:
+            pass
+        if getattr(self.ventana_principal, "_popup_incidentes", None) is self:
+            self.ventana_principal._popup_incidentes = None
+        self.destroy()
 
     def _mostrar_error(self, error):
         self.lbl_total.configure(text="No se pudo cargar el historial")

@@ -29,6 +29,7 @@ class VentanaPrincipal(ctk.CTk):
         self.sesion = None          # {"rol", "identificacion", "nombre"} o None
         self._actual = None         # widget que se está mostrando
         self._botones = {}          # clave de módulo -> botón del menú
+        self._popup_incidentes = None
 
         self._crear_barra_estado()
         self.menu = ctk.CTkFrame(
@@ -108,7 +109,7 @@ class VentanaPrincipal(ctk.CTk):
         if popup is not None:
             try:
                 if popup.winfo_exists():
-                    popup.destroy()
+                    popup.cerrar()
             except tk.TclError:
                 pass
 

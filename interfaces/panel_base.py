@@ -66,14 +66,13 @@ class PanelBase(ctk.CTkFrame):
             self.dot_incidentes.place_forget()
 
     def _abrir_popup_incidentes(self):
-        popup = getattr(self, "_popup_incidentes", None)
+        popup = getattr(self.ventana, "_popup_incidentes", None)
         if popup is not None and popup.winfo_exists():
-            popup.destroy()
-            self._popup_incidentes = None
+            popup.focus_force()
             return
         from interfaces.incidentes_popup import PopupIncidentes
 
-        self._popup_incidentes = PopupIncidentes(
+        self.ventana._popup_incidentes = PopupIncidentes(
             self, self.ventana.sesion["identificacion"])
 
     def construir(self):
