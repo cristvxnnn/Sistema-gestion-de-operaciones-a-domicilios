@@ -72,6 +72,15 @@ def motivo_correo_invalido(correo):
     return None
 
 
+def mensaje_error_registro(error):
+    """Convierte errores técnicos de registro en mensajes útiles para el usuario."""
+    mensaje = str(error)
+    normalizado = mensaje.casefold()
+    if "duplicate entry" in normalizado and "correo" in normalizado:
+        return "Este correo electrónico ya está en uso. Usa otro correo."
+    return mensaje
+
+
 def validar_identificacion(texto):
     """Valida la longitud y el formato de una identificación."""
     if not texto:

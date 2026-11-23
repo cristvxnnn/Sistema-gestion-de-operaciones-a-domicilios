@@ -6,7 +6,7 @@ from interfaces.estilos import COLORES
 from interfaces.componentes import limitar_campo
 from interfaces.validaciones import (
     MAX_BIGINT, MAX_IDENTIFICACION, MAX_TEXTO_SQL, motivo_correo_invalido,
-    validar_identificacion)
+    mensaje_error_registro, validar_identificacion)
 from operaciones.accesos import (
     buscar_cliente, buscar_domiciliario, buscar_usuario, listar_barrios,
     listar_medios_transporte, registrar_cliente, registrar_domiciliario)
@@ -282,7 +282,12 @@ class PantallaAcceso(ctk.CTkFrame):
             else:
                 registrar_domiciliario(datos)
         except ErrorBD as e:
-            messagebox.showerror("No se pudo registrar", str(e))
+            mensaje = mensaje_error_registro(e)
+            if mensaje != str(e):
+                messagebox.showerror("Correo ya registrado", mensaje)
+                self.widgets["correo"].focus_set()
+            else:
+                messagebox.showerror("No se pudo registrar", mensaje)
             return
         messagebox.showinfo("Registro exitoso", f"Bienvenido(a), {datos['nombre']}.")
         self.ventana.iniciar_sesion(self.rol, datos["identificacion"], datos["nombre"])
