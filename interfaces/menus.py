@@ -35,6 +35,6 @@ MENUS = {
         ("usuarios", "Usuarios", PanelUsuariosAdmin),
         ("establecimientos", "Establecimientos", PanelEstablecimientosAdmin),
         ("barrios", "Barrios", PanelBarriosAdmin),
-        ("consultas", "Consultas", PanelConsultas),
+        ("consultas", "Más info.", PanelConsultas),
     ],
 }

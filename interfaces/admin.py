@@ -394,13 +394,7 @@ class PanelConsultas(PanelBase):
         boton_estilizado(barra, "Ejecutar", self._ejecutar).pack(
             side="left", padx=8)
 
-        self.lbl_tecnica = ttk.Label(self.contenido, text="", style="Subtitulo.TLabel")
-        self.lbl_tecnica.pack(anchor="w", pady=(8, 4))
-
-        self.txt_sql = tk.Text(self.contenido, height=7, font=("Consolas", 9), wrap="none",
-                               background="#FFFFFF", relief="solid", borderwidth=1,
-                               state="disabled")
-        self.txt_sql.pack(fill="x")
+        
 
         self.zona = ttk.Frame(self.contenido, style="Contenido.TFrame")
         self.zona.pack(fill="both", expand=True, pady=(10, 0))

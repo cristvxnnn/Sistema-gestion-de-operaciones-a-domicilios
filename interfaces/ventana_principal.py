@@ -113,7 +113,7 @@ class VentanaPrincipal(ctk.CTk):
                 pass
 
     def abrir_perfil(self):
-        if not self.sesion:
+        if not self.sesion or self.sesion.get("rol") == "admin":
             return
         perfil = getattr(self, "_ventana_perfil", None)
         if perfil is not None and perfil.winfo_exists():
@@ -188,7 +188,8 @@ class VentanaPrincipal(ctk.CTk):
         ctk.CTkLabel(
             detalle, text=TITULOS_ROL[rol], text_color="#C7D5E8",
             font=("Segoe UI", 10), anchor="w").pack(fill="x")
-        self._hacer_perfil_clicable(perfil)
+        if rol != "admin":
+            self._hacer_perfil_clicable(perfil)
 
         navegacion = ctk.CTkScrollableFrame(
             self.menu, fg_color="transparent", corner_radius=0,
