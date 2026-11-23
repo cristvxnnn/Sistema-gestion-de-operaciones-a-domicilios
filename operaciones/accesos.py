@@ -93,41 +93,57 @@ def actualizar_perfil(datos):
         conexion.close()
 
 
-def eliminar_cuenta(identificacion):
-    """Elimina una cuenta y sus solicitudes como cliente de forma transaccional."""
+def eliminar_cuenta(identificacion, rol_activo):
+    """Elimina el rol activo del usuario y borra el usuario solo si no conserva otro rol."""
     conexion = obtener_conexion()
     cursor = None
     try:
         cursor = conexion.cursor()
-        cursor.execute(
-            "SELECT COUNT(*) FROM solicitud "
-            "WHERE identificacionDomiciliario = %s",
-            (identificacion,))
-        if cursor.fetchone()[0]:
-            raise ErrorBD(
-                "No puedes eliminar la cuenta mientras tengas solicitudes "
-                "asignadas como domiciliario.")
 
-        cursor.execute(
-            "SELECT numeroSolicitud FROM solicitud "
-            "WHERE identificacionCliente = %s",
-            (identificacion,))
-        solicitudes = [fila[0] for fila in cursor.fetchall()]
-        if solicitudes:
-            marcadores = ", ".join(["%s"] * len(solicitudes))
+        if rol_activo == "cliente":
             cursor.execute(
-                f"DELETE FROM incidente WHERE numeroSolicitud IN ({marcadores})",
-                tuple(solicitudes))
-            cursor.execute(
-                f"DELETE FROM solicitud WHERE numeroSolicitud IN ({marcadores})",
-                tuple(solicitudes))
+                "SELECT numeroSolicitud FROM solicitud "
+                "WHERE identificacionCliente = %s",
+                (identificacion,))
+            solicitudes = [fila[0] for fila in cursor.fetchall()]
+            if solicitudes:
+                marcadores = ", ".join(["%s"] * len(solicitudes))
+                cursor.execute(
+                    f"DELETE FROM incidente WHERE numeroSolicitud IN ({marcadores})",
+                    tuple(solicitudes))
+                cursor.execute(
+                    f"DELETE FROM solicitud WHERE numeroSolicitud IN ({marcadores})",
+                    tuple(solicitudes))
 
-        cursor.execute("DELETE FROM cliente WHERE identificacion = %s",
-                       (identificacion,))
-        cursor.execute("DELETE FROM domiciliario WHERE identificacion = %s",
-                       (identificacion,))
-        cursor.execute("DELETE FROM usuario WHERE identificacion = %s",
-                       (identificacion,))
+            cursor.execute(
+                "DELETE FROM cliente WHERE identificacion = %s",
+                (identificacion,))
+
+        elif rol_activo == "domiciliario":
+            cursor.execute(
+                "SELECT COUNT(*) FROM solicitud "
+                "WHERE identificacionDomiciliario = %s",
+                (identificacion,))
+            if cursor.fetchone()[0]:
+                raise ErrorBD(
+                    "No puedes eliminar tu perfil de domiciliario mientras tengas "
+                    "solicitudes asignadas o en historial.")
+
+            cursor.execute(
+                "DELETE FROM domiciliario WHERE identificacion = %s",
+                (identificacion,))
+
+        # Verifica si aún conserva el otro rol antes de eliminar de usuario
+        cursor.execute(
+            "SELECT 1 FROM cliente WHERE identificacion = %s "
+            "UNION ALL "
+            "SELECT 1 FROM domiciliario WHERE identificacion = %s",
+            (identificacion, identificacion))
+        if cursor.fetchone() is None:
+            cursor.execute(
+                "DELETE FROM usuario WHERE identificacion = %s",
+                (identificacion,))
+
         conexion.commit()
     except ErrorBD:
         conexion.rollback()
@@ -139,7 +155,6 @@ def eliminar_cuenta(identificacion):
         if cursor is not None:
             cursor.close()
         conexion.close()
-
 
 def listar_barrios():
     return ejecutar_consulta("SELECT idBarrio, nombreBarrio FROM barrio ORDER BY nombreBarrio")
@@ -176,6 +191,13 @@ def registrar_cliente(d):
             if cursor.fetchone() is not None:
                 raise ErrorBD("Esta identificación ya está registrada como cliente.")
 
+            cursor.execute(
+                "UPDATE usuario SET nombre = %s, apellidoPaterno = %s, "
+                "apellidoMaterno = %s, telefono = %s, correo = %s "
+                "WHERE identificacion = %s",
+                (d["nombre"], d["apellidoPaterno"], d["apellidoMaterno"],
+                 d["telefono"], d["correo"], d["identificacion"]))
+            
             # Usuario ya existe (por ejemplo, como domiciliario): añadir solo el rol.
             cursor.execute(
                 "INSERT INTO cliente (identificacion, viaPrincipal, numero, idBarrio, referencia) "
@@ -226,6 +248,13 @@ def registrar_domiciliario(d):
             if cursor.fetchone() is not None:
                 raise ErrorBD("Esta identificación ya está registrada como domiciliario.")
 
+            cursor.execute(
+                "UPDATE usuario SET nombre = %s, apellidoPaterno = %s, "
+                "apellidoMaterno = %s, telefono = %s, correo = %s "
+                "WHERE identificacion = %s",
+                (d["nombre"], d["apellidoPaterno"], d["apellidoMaterno"],
+                 d["telefono"], d["correo"], d["identificacion"]))
+            
             # Usuario ya existe (por ejemplo, como cliente): añadir solo el rol.
             cursor.execute(
                 "INSERT INTO domiciliario "

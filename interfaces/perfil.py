@@ -183,7 +183,9 @@ class VentanaPerfil(ctk.CTkToplevel):
             "correo", "Correo electrónico", p["correo"], fila=2, columna=1,
             parent=datos)
 
-        if p["esCliente"]:
+        rol_activo = self.ventana.sesion.get("rol")
+        
+        if p["esCliente"] and rol_activo == "cliente":
             self._datos_rol("Datos de cliente")
 
             ctk.CTkLabel(
@@ -212,7 +214,7 @@ class VentanaPerfil(ctk.CTkToplevel):
                 "referencia", "Referencia", p["referencia"] or "",
                 fila=1, columna=1, parent=cliente)
 
-        if p["esDomiciliario"]:
+        if p["esDomiciliario"] and rol_activo == "domiciliario":
             self._datos_rol("Datos de domiciliario")
             domiciliario = ctk.CTkFrame(
                 self.contenedor, fg_color="transparent")
@@ -297,6 +299,9 @@ class VentanaPerfil(ctk.CTkToplevel):
 
     def _leer_datos(self):
         p = self.perfil
+        rol_activo = self.ventana.sesion.get("rol")
+        es_cliente_activo = bool(p["esCliente"]) and rol_activo == "cliente"
+        es_domiciliario_activo = bool(p["esDomiciliario"]) and rol_activo == "domiciliario"
         datos = {
             "identificacion": int(p["identificacion"]),
             "nombre": self.entradas["nombre"].get().strip(),
@@ -304,8 +309,8 @@ class VentanaPerfil(ctk.CTkToplevel):
             "apellidoMaterno": self.entradas["apellidoMaterno"].get().strip() or None,
             "telefono": self.entradas["telefono"].get().strip(),
             "correo": self.entradas["correo"].get().strip(),
-            "esCliente": bool(p["esCliente"]),
-            "esDomiciliario": bool(p["esDomiciliario"]),
+            "esCliente": es_cliente_activo,
+            "esDomiciliario": es_domiciliario_activo,
         }
         if not datos["nombre"] or not datos["apellidoPaterno"]:
             raise ValueError("El nombre y el apellido paterno son obligatorios.")
@@ -329,7 +334,7 @@ class VentanaPerfil(ctk.CTkToplevel):
             })
             if not datos["viaPrincipal"] or not datos["numero"] or not datos["idBarrio"]:
                 raise ValueError("Completa la dirección y el barrio.")
-        if datos["esDomiciliario"]:
+        if datos["esDomiciliario"] and rol_activo == "domiciliario":
             medio = self.entradas["idMedioTransporte"].get()
             datos.update({
                 "idMedioTransporte": self.medios.get(medio),
@@ -368,11 +373,22 @@ class VentanaPerfil(ctk.CTkToplevel):
                              str(error), parent=self)
 
     def _confirmar_eliminacion(self):
+        rol_activo = self.ventana.sesion.get("rol")
+        if rol_activo == "cliente":
+            aviso = (
+                "Se eliminará tu perfil de cliente y tus solicitudes realizadas. "
+                "Si también tienes cuenta como domiciliario, esa se conservará.\n\n"
+                "Esta acción no se puede deshacer. ¿Deseas continuar?"
+            )
+        else:
+            aviso = (
+                "Se eliminará tu perfil de domiciliario. "
+                "Si también tienes cuenta como cliente, esa se conservará.\n\n"
+                "Esta acción no se puede deshacer. ¿Deseas continuar?"
+            )
+
         confirmado = messagebox.askyesno(
-            "Eliminar cuenta",
-            "Se eliminarán tu cuenta y tus solicitudes como cliente. "
-            "Esta acción no se puede deshacer.\n\n¿Deseas continuar?",
-            icon="warning", parent=self)
+            "Eliminar perfil", aviso, icon="warning", parent=self)
         if not confirmado:
             return
         escrito = simpledialog.askstring(
@@ -385,10 +401,10 @@ class VentanaPerfil(ctk.CTkToplevel):
                 "La identificación no coincide.", parent=self)
             return
         ejecutar_en_segundo_plano(
-            self, lambda: op.eliminar_cuenta(self.identificacion),
+            self, lambda: op.eliminar_cuenta(self.identificacion, rol_activo),
             self._cuenta_eliminada,
             lambda error: messagebox.showerror(
-                "No se pudo eliminar la cuenta", str(error), parent=self))
+                "No se pudo eliminar el perfil", str(error), parent=self))
 
     def _cuenta_eliminada(self, _resultado):
         self.grab_release()
