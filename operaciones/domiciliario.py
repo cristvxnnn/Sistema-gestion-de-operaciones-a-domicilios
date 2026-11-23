@@ -91,3 +91,12 @@ def estado_solicitud(numero):
         "JOIN estadoSolicitud e ON s.idEstadoSolicitud = e.idEstadoSolicitud "
         "WHERE s.numeroSolicitud = %s", (numero,))
     return fila[0]["estado"] if fila else ""
+
+def resumen_por_estado(id_domiciliario):
+    return ejecutar_consulta(
+        "SELECT e.nombreEstado AS estado, COUNT(*) AS total "
+        "FROM solicitud s "
+        "JOIN estadoSolicitud e ON s.idEstadoSolicitud = e.idEstadoSolicitud "
+        "WHERE s.identificacionDomiciliario = %s "
+        "GROUP BY e.idEstadoSolicitud, e.nombreEstado "
+        "ORDER BY e.idEstadoSolicitud", (id_domiciliario,))

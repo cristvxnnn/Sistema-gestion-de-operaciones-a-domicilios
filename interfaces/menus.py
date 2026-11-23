@@ -3,7 +3,7 @@ from interfaces.cliente import (
     PanelResumenCliente, PanelMisSolicitudes)
 from interfaces.cliente_marketplace import PanelNuevaSolicitudMarketplace
 from interfaces.domiciliario import (
-    PanelDisponibles, PanelMisSolicitudesDom, PanelRegistrarIncidente)
+    PanelDisponibles, PanelMisSolicitudesDom, PanelRegistrarIncidente, PanelResumenDomiciliario)
 from interfaces.admin import (
     PanelDashboard, PanelSolicitudesAdmin, PanelIncidentesAdmin,
     PanelUsuariosAdmin, PanelEstablecimientosAdmin,
@@ -26,6 +26,7 @@ MENUS = {
         ("disponibles", "Solicitudes disponibles", PanelDisponibles),
         ("mis_solicitudes", "Mis solicitudes", PanelMisSolicitudesDom),
         ("incidentes", "Registrar incidente", PanelRegistrarIncidente),
+        ("resumen", "Mi historial", PanelResumenDomiciliario),
     ],
     "admin": [
         ("dashboard", "Dashboard", PanelDashboard),

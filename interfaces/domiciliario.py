@@ -1,13 +1,13 @@
 """Módulos del rol domiciliario: solicitudes disponibles, mis solicitudes y registrar incidente."""
 from tkinter import ttk, messagebox
-
+import tkinter as tk
 from database.conexion import ErrorBD
 from interfaces.estilos import COLORES
 from interfaces.panel_base import PanelBase
 from interfaces.componentes import (
     TablaDatos, mostrar_error, limitar_campo, combo_estilizado,
     boton_estilizado, entrada_estilizada, entrada_busqueda,
-    ejecutar_en_segundo_plano, normalizar_busqueda)
+    ejecutar_en_segundo_plano, normalizar_busqueda, grilla_responsiva)
 from interfaces.validaciones import MAX_TEXTO_SQL
 from operaciones import domiciliario as op
 
@@ -326,3 +326,45 @@ class PanelRegistrarIncidente(PanelBase):
     def _fallo_registro(self, error):
         self.btn_registrar.configure(state="normal", text="Registrar incidente")
         messagebox.showerror("No se pudo registrar el incidente", str(error))
+
+class PanelResumenDomiciliario(PanelBase):
+    TITULO = "Mi historial"
+    DESCRIPCION = "Consulta el resumen de tus entregas por estado."
+
+    def construir(self):
+        id_domiciliario = self.ventana.sesion["identificacion"]
+        self.lbl_cargando = ttk.Label(
+            self.contenido, text="Cargando tu resumen…",
+            style="Subtitulo.TLabel")
+        self.lbl_cargando.pack(anchor="w", padx=12, pady=12)
+        ejecutar_en_segundo_plano(
+            self, lambda: op.resumen_por_estado(id_domiciliario),
+            self._mostrar_resumen, self._fallo_resumen)
+
+    def _fallo_resumen(self, error):
+        self.lbl_cargando.destroy()
+        mostrar_error(self.contenido, error)
+
+    def _mostrar_resumen(self, estados):
+        self.lbl_cargando.destroy()
+
+        indicadores = [("Total de entregas", sum(f["total"] for f in estados))]
+        indicadores += [(f["estado"], f["total"]) for f in estados]
+
+        rejilla = ttk.Frame(self.contenido, style="Contenido.TFrame")
+        rejilla.pack(fill="x")
+        pasteles = ["#EAF2FF", "#FFF3E0", "#E8F8F0", "#F3ECFF", "#FDECEF", "#FFF9DB"]
+        tarjetas = []
+        for i, (titulo, valor) in enumerate(indicadores):
+            color = pasteles[i % len(pasteles)]
+            t = tk.Frame(rejilla, bg=color, padx=18, pady=18,
+                         highlightbackground="#DCE6F3", highlightthickness=1)
+            tk.Label(t, text=titulo, bg=color, fg="#526789",
+                     font=("Segoe UI", 10)).pack(anchor="w")
+            tk.Label(t, text=str(valor), bg=color, fg="#122B50",
+                     font=("Segoe UI", 20, "bold")).pack(anchor="w", pady=(6, 0))
+            tarjetas.append(t)
+        rejilla.bind(
+            "<Configure>",
+            lambda evento: grilla_responsiva(rejilla, tarjetas, evento.width))
+        self.after_idle(lambda: grilla_responsiva(rejilla, tarjetas, rejilla.winfo_width()))

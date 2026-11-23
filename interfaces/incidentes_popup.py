@@ -120,7 +120,7 @@ class PopupIncidentes(ctk.CTkToplevel):
                 wraplength=340).grid(row=0, column=0, sticky="ew", padx=10, pady=(9, 4))
             ctk.CTkLabel(
                 detalle,
-                text=f"{incidente['fecha']}  ·  {incidente['hora']}  ·  Código {incidente['codigoIncidente']}",
+                text=f"{incidente['fecha']}  ·  {incidente['hora']}  ·  Código incidente {incidente['codigoIncidente']}",
                 text_color=COLORES["texto_suave"], font=("Segoe UI", 9),
                 anchor="w", wraplength=340).grid(
                     row=1, column=0, sticky="ew", padx=10, pady=(0, 9))
