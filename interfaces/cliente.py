@@ -13,7 +13,8 @@ from interfaces.componentes import (
     TablaDatos, tarjeta_indicador, mostrar_error, limitar_campo,
     combo_estilizado, boton_estilizado, entrada_estilizada, entrada_busqueda,
     ejecutar_en_segundo_plano, grilla_responsiva, normalizar_busqueda)
-from interfaces.validaciones import MAX_TEXTO_SQL
+from interfaces.validaciones import (
+    MAX_TEXTO_SQL, MAX_MONTO_SOLICITUD_TEXTO, validar_monto_solicitud)
 from operaciones import cliente as op
 from operaciones.accesos import listar_barrios
 from operaciones.catalogos import catalogo_para_establecimiento
@@ -223,7 +224,8 @@ class PanelNuevaSolicitud(PanelBase):
 
         etiqueta("Monto total ($)", 0, 1)
         self.ent_monto = entrada_estilizada(
-            marco, ancho=190, placeholder="Monto en pesos")
+            marco, ancho=190,
+            placeholder=f"Máx. {MAX_MONTO_SOLICITUD_TEXTO}")
         self.ent_monto.grid(row=1, column=1, sticky="w", pady=(2, 6))
         limitar_campo(self.ent_monto, 13)
 
@@ -462,8 +464,7 @@ class PanelNuevaSolicitud(PanelBase):
             monto = Decimal(self.ent_monto.get().strip().replace(",", "."))
         except InvalidOperation:
             raise ValueError("El monto debe ser un número.")
-        if monto <= 0:
-            raise ValueError("El monto debe ser mayor que cero.")
+        monto = validar_monto_solicitud(monto)
         if not self.cmb_metodo.get():
             raise ValueError("Selecciona el método de pago.")
         tipo = self.cmb_tipo.get()

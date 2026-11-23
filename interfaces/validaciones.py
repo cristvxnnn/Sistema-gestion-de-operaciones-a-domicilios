@@ -1,4 +1,5 @@
 """Validaciones y límites compartidos por los formularios de la aplicación."""
+from decimal import Decimal
 import re
 
 
@@ -6,6 +7,8 @@ MAX_TEXTO_SQL = 50
 MIN_IDENTIFICACION = 6
 MAX_IDENTIFICACION = 10
 MAX_BIGINT = 19
+MAX_MONTO_SOLICITUD = Decimal("99999999.99")
+MAX_MONTO_SOLICITUD_TEXTO = "$99.999.999,99"
 
 
 def limitar_entry(entry, maximo=MAX_TEXTO_SQL, solo_numeros=False):
@@ -21,6 +24,18 @@ def limitar_entry(entry, maximo=MAX_TEXTO_SQL, solo_numeros=False):
     comando = widget.register(validar)
     entry.configure(validate="key", validatecommand=(comando, "%P"))
     return entry
+
+
+def validar_monto_solicitud(monto):
+    """Valida el rango que admite DECIMAL(10,2) en la base de datos."""
+    if not monto.is_finite():
+        raise ValueError("El monto debe ser un número finito.")
+    if monto <= 0:
+        raise ValueError("El monto debe ser mayor que cero.")
+    if monto > MAX_MONTO_SOLICITUD:
+        raise ValueError(
+            f"El monto máximo permitido es de {MAX_MONTO_SOLICITUD_TEXTO}.")
+    return monto
 
 
 def motivo_correo_invalido(correo):

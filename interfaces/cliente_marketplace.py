@@ -12,7 +12,8 @@ from interfaces.componentes import (
     limitar_campo, mostrar_error, ejecutar_en_segundo_plano)
 from interfaces.estilos import COLORES
 from interfaces.panel_base import PanelBase
-from interfaces.validaciones import MAX_TEXTO_SQL
+from interfaces.validaciones import (
+    MAX_TEXTO_SQL, MAX_MONTO_SOLICITUD_TEXTO, validar_monto_solicitud)
 from operaciones import cliente as op
 from operaciones.accesos import listar_barrios
 from operaciones.catalogos import (
@@ -564,7 +565,8 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
         marco.columnconfigure(1, weight=1)
 
         self.ent_desc_externa = self._entrada_estilizada(marco, "Ej. Recoger un paquete")
-        self.ent_monto_externa = self._entrada_estilizada(marco, "Ej. 25000")
+        self.ent_monto_externa = self._entrada_estilizada(
+            marco, f"Máx. {MAX_MONTO_SOLICITUD_TEXTO}")
         self.ent_via = self._entrada_estilizada(marco, "Ej. Calle 5")
         self.ent_num = self._entrada_estilizada(marco, "Ej. 12-34")
         self.cmb_barrio = self._combo_estilizado(marco, list(self.barrios))
@@ -615,8 +617,7 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
             raise ValueError("El monto debe ser un número.")
         if not monto.is_finite():
             raise ValueError("El monto debe ser un número finito.")
-        if monto <= 0:
-            raise ValueError("El monto debe ser mayor que cero.")
+        monto = validar_monto_solicitud(monto)
         if not self.ent_via.get().strip() or not self.ent_num.get().strip():
             raise ValueError("Completa la vía principal y el número.")
         if not self.cmb_barrio.get():
@@ -774,7 +775,8 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
                 raise ValueError(
                     f"El nombre del producto supera los {MAX_TEXTO_SQL} caracteres permitidos.")
             datos["descripcion"] = descripcion
-            datos["monto"] = Decimal(str(self.producto_actual["precio"]))
+            datos["monto"] = validar_monto_solicitud(
+                Decimal(str(self.producto_actual["precio"])))
             datos["codigoEstablecimiento"] = self.establecimientos[
                 self.establecimiento_actual]["codigo"]
             return datos
@@ -782,7 +784,8 @@ class PanelNuevaSolicitudMarketplace(PanelBase):
         if not self.datos_externos:
             raise ValueError("Completa los datos de recogida externa.")
         datos["descripcion"] = self.datos_externos["descripcion"]
-        datos["monto"] = Decimal(self.datos_externos["monto"])
+        datos["monto"] = validar_monto_solicitud(
+            Decimal(self.datos_externos["monto"]))
         datos["via"] = self.datos_externos["via"]
         datos["numeroExterno"] = self.datos_externos["numero"]
         datos["idBarrio"] = self.barrios[self.datos_externos["barrio"]]
