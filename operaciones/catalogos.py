@@ -63,7 +63,7 @@ IMAGENES_LOCALES = {
     "Sobre manila": "sobreManila.jpg",
     "Cinta embalaje": "CintaDeEmbalaje.jpg",
     "Plástico burbuja": "plastico burbuja inter rapidisimo.jpg",
-    "Guía urbana": "guía urbana servientrega.jpg",
+    "Envío confidencial": "guía urbana servientrega.jpg",
     "Caja mediana": "Caja mediana servientrega.png",
     "Sobre de seguridad": "SobreDe seguridad servientrega.webp",
     "Bolsa mensajería": "Bolsa de mensajeria servientrega.jpg",
@@ -312,8 +312,8 @@ CATALOGO_PRODUCTOS = {
     ],
     "Servientrega": [
         {
-            "nombre": "Guía urbana",
-            "precio": 16000,
+            "nombre": "Envío confidencial",
+            "precio": 50000,
             "imagen": "https://placehold.co/160x100/png?text=Guia",
         },
         {
